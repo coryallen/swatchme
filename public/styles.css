@@ -163,3 +163,38 @@ button:disabled {
     border-radius: 4px;
     transition: width 0.3s ease;
 }
+
+.debug-controls {
+    margin: 20px 0;
+}
+
+.debug-panel {
+    background: rgba(255,255,255,0.1);
+    padding: 20px;
+    border-radius: 15px;
+    margin: 20px 0;
+    backdrop-filter: blur(10px);
+}
+
+.debug-images {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 20px;
+}
+
+.debug-item {
+    text-align: center;
+}
+
+.debug-item h4 {
+    margin-bottom: 10px;
+    font-size: 14px;
+}
+
+.debug-item canvas {
+    border: 2px solid white;
+    border-radius: 8px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+}

@@ -346,6 +346,78 @@
             
             showStep('welcome-step');
         }
+        
+        function toggleDebugMode() {
+            debugMode = !debugMode;
+            const panel = document.getElementById('debug-panel');
+            const button = document.getElementById('debug-toggle');
+            
+            if (debugMode) {
+                panel.style.display = 'block';
+                button.textContent = 'Hide Debug Mode';
+            } else {
+                panel.style.display = 'none';
+                button.textContent = 'Show Debug Mode';
+            }
+        }
+        
+        function updateDebugPanels(originalImage, segmentationResults) {
+            // Debug 1: Original webcam image
+            const debugOriginal = document.getElementById('debug-original');
+            const debugOriginalCtx = debugOriginal.getContext('2d');
+            debugOriginalCtx.drawImage(originalImage, 0, 0, 320, 240);
+            
+            // Debug 2: Segmentation mask
+            const debugMask = document.getElementById('debug-mask');
+            const debugMaskCtx = debugMask.getContext('2d');
+            
+            if (segmentationResults.segmentationMask) {
+                const mask = segmentationResults.segmentationMask;
+                
+                // Handle different mask formats
+                if (mask instanceof HTMLCanvasElement) {
+                    debugMaskCtx.drawImage(mask, 0, 0, 320, 240);
+                } else if (mask instanceof ImageData) {
+                    const tempCanvas = document.createElement('canvas');
+                    tempCanvas.width = originalImage.width;
+                    tempCanvas.height = originalImage.height;
+                    const tempCtx = tempCanvas.getContext('2d');
+                    tempCtx.putImageData(mask, 0, 0);
+                    debugMaskCtx.drawImage(tempCanvas, 0, 0, 320, 240);
+                } else if (mask && mask.data) {
+                    // Handle MediaPipe format
+                    const tempCanvas = document.createElement('canvas');
+                    tempCanvas.width = originalImage.width;
+                    tempCanvas.height = originalImage.height;
+                    const tempCtx = tempCanvas.getContext('2d');
+                    const tempImageData = tempCtx.createImageData(originalImage.width, originalImage.height);
+                    
+                    for (let i = 0; i < mask.data.length; i++) {
+                        const maskVal = mask.data[i] * 255;
+                        const pixelIndex = i * 4;
+                        tempImageData.data[pixelIndex] = maskVal;
+                        tempImageData.data[pixelIndex + 1] = maskVal;
+                        tempImageData.data[pixelIndex + 2] = maskVal;
+                        tempImageData.data[pixelIndex + 3] = 255;
+                    }
+                    
+                    tempCtx.putImageData(tempImageData, 0, 0);
+                    debugMaskCtx.drawImage(tempCanvas, 0, 0, 320, 240);
+                } else {
+                    // No mask available
+                    debugMaskCtx.fillStyle = 'red';
+                    debugMaskCtx.fillRect(0, 0, 320, 240);
+                    debugMaskCtx.fillStyle = 'white';
+                    debugMaskCtx.font = '16px Arial';
+                    debugMaskCtx.fillText('No Mask Data', 100, 120);
+                }
+            }
+            
+            // Debug 3: Tiled background
+            const debugBackground = document.getElementById('debug-background');
+            const debugBackgroundCtx = debugBackground.getContext('2d');
+            createTiledBackground(debugBackgroundCtx, 320, 240);
+        }
 
         function showStep(stepId) {
             document.querySelectorAll('.step').forEach(step => {
