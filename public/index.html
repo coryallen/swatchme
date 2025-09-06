@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Color Sample Portrait</title>
     <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/selfie_segmentation.js" crossorigin="anonymous"></script>
 </head>
 <body>
     <div class="container">
@@ -117,6 +121,42 @@
         let capturedImage;
         let debugMode = false;
         let segmentationMask = null;
+        let selfieSegmentation = null;
+        let isSegmentationReady = false;
+        
+        // Initialize MediaPipe Selfie Segmentation
+        async function initializeSegmentation() {
+            try {
+                selfieSegmentation = new SelfieSegmentation({
+                    locateFile: (file) => {
+                        return `https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/${file}`;
+                    }
+                });
+                
+                selfieSegmentation.setOptions({
+                    modelSelection: 0, // 0 for general model (more reliable), 1 for landscape model
+                    selfieMode: true,
+                });
+                
+                selfieSegmentation.onResults((results) => {
+                    // This callback will be used by the segmentation process
+                    console.log('MediaPipe results received:', results);
+                    if (results.segmentationMask) {
+                        console.log('Segmentation mask received with data:', results.segmentationMask);
+                    }
+                    window.lastSegmentationResults = results;
+                });
+                
+                isSegmentationReady = true;
+                console.log('MediaPipe Selfie Segmentation initialized successfully');
+            } catch (error) {
+                console.error('Failed to initialize MediaPipe Selfie Segmentation:', error);
+                isSegmentationReady = false;
+            }
+        }
+        
+        // Initialize segmentation when page loads
+        window.addEventListener('load', initializeSegmentation);
         
         async function startExperience() {
             try {
@@ -247,21 +287,17 @@
             processImageWithBackground();
         }
 
-        function processImageWithBackground() {
+        async function processImageWithBackground() {
             const canvas = document.getElementById('result-canvas');
             const ctx = canvas.getContext('2d');
             
             const img = new Image();
-            img.onload = function() {
+            img.onload = async function() {
                 canvas.width = img.width;
                 canvas.height = img.height;
                 
-                // Create tiled pattern background
-                createTiledBackground(ctx, img.width, img.height);
-                
-                // Apply simple background removal (this is a basic implementation)
-                // In a real app, you'd use a more sophisticated algorithm like BodyPix or MediaPipe
-                applyBasicBackgroundRemoval(ctx, img);
+                // Apply MediaPipe segmentation (with fallback to basic method)
+                await applyMediaPipeSegmentation(ctx, img);
                 
                 // Update debug panels with available data
                 updateDebugPanels(img, { segmentationMask: segmentationMask });
@@ -293,6 +329,195 @@
             }
         }
 
+        async function applyMediaPipeSegmentation(ctx, img) {
+            if (!isSegmentationReady || !selfieSegmentation) {
+                console.warn('MediaPipe not ready, falling back to basic segmentation');
+                applyBasicBackgroundRemoval(ctx, img);
+                return;
+            }
+            
+            try {
+                // Create a temporary canvas to get the image data
+                const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = img.width;
+                tempCanvas.height = img.height;
+                const tempCtx = tempCanvas.getContext('2d');
+                tempCtx.drawImage(img, 0, 0);
+                
+                // Clear previous results
+                window.lastSegmentationResults = null;
+                
+                // Run MediaPipe segmentation
+                await selfieSegmentation.send({image: tempCanvas});
+                
+                // Wait for results (with timeout)
+                let attempts = 0;
+                while (!window.lastSegmentationResults && attempts < 50) {
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                    attempts++;
+                }
+                
+                const results = window.lastSegmentationResults;
+                
+                if (results && results.segmentationMask) {
+                    console.log('MediaPipe segmentation successful');
+                    
+                    // Create tiled pattern background first
+                    createTiledBackground(ctx, img.width, img.height);
+                    
+                    // Get the segmentation mask - handle different formats
+                    const mask = results.segmentationMask;
+                    console.log('Raw mask object:', mask);
+                    console.log('Mask constructor:', mask.constructor.name);
+                    console.log('Mask properties:', Object.keys(mask));
+                    
+                    let maskData;
+                    let maskWidth = img.width;
+                    let maskHeight = img.height;
+                    
+                    // Try different ways to access mask data
+                    if (mask instanceof ImageBitmap) {
+                        // Convert ImageBitmap to ImageData with horizontal flip to match webcam
+                        const bitmapCanvas = document.createElement('canvas');
+                        bitmapCanvas.width = mask.width;
+                        bitmapCanvas.height = mask.height;
+                        const bitmapCtx = bitmapCanvas.getContext('2d');
+                        
+                        // Flip horizontally to match webcam mirror effect
+                        bitmapCtx.scale(-1, 1);
+                        bitmapCtx.drawImage(mask, -mask.width, 0);
+                        
+                        const bitmapImageData = bitmapCtx.getImageData(0, 0, mask.width, mask.height);
+                        maskData = bitmapImageData.data;
+                        maskWidth = mask.width;
+                        maskHeight = mask.height;
+                        console.log('Converted ImageBitmap to ImageData with flip, dimensions:', maskWidth, 'x', maskHeight);
+                        console.log('ImageData length:', maskData.length);
+                    } else if (mask.data) {
+                        maskData = mask.data;
+                        console.log('Using mask.data, length:', maskData.length);
+                        // Note: For non-ImageBitmap formats, flipping would need to be done during pixel processing
+                    } else if (mask instanceof Float32Array) {
+                        maskData = mask;
+                        console.log('Mask is Float32Array, length:', maskData.length);
+                        // Note: For Float32Array, flipping would need to be done during pixel processing
+                    } else if (mask instanceof ImageData) {
+                        maskData = mask.data;
+                        maskWidth = mask.width;
+                        maskHeight = mask.height;
+                        console.log('Mask is ImageData, dimensions:', maskWidth, 'x', maskHeight);
+                        // Note: For ImageData, flipping would need to be done during pixel processing
+                    } else {
+                        console.error('Unknown mask format:', mask);
+                        throw new Error('Unable to process mask data');
+                    }
+                    
+                    // Create debug mask canvas
+                    const maskCanvas = document.createElement('canvas');
+                    maskCanvas.width = img.width;
+                    maskCanvas.height = img.height;
+                    const maskCtx = maskCanvas.getContext('2d');
+                    const debugMaskData = maskCtx.createImageData(img.width, img.height);
+                    
+                    // Get original image data
+                    const imageData = tempCtx.getImageData(0, 0, img.width, img.height);
+                    const pixels = imageData.data;
+                    
+                    // Sample some mask values for debugging
+                    let personPixelCount = 0;
+                    let backgroundPixelCount = 0;
+                    let sampleValues = [];
+                    
+                    // Determine if we're dealing with RGBA data or single values
+                    const isRGBAData = mask instanceof ImageBitmap;
+                    const stride = isRGBAData ? 4 : 1; // RGBA has 4 values per pixel, others have 1
+                    
+                    // Apply segmentation
+                    for (let i = 0; i < img.width * img.height; i++) {
+                        let maskValue;
+                        let maskIndex = i;
+                        
+                        // For non-ImageBitmap formats, we need to flip the mask index
+                        if (!isRGBAData) {
+                            const x = i % img.width;
+                            const y = Math.floor(i / img.width);
+                            const flippedX = img.width - 1 - x;
+                            maskIndex = y * img.width + flippedX;
+                        }
+                        
+                        if (isRGBAData) {
+                            // For ImageBitmap converted to ImageData, use the red channel as the mask value
+                            // MediaPipe masks are grayscale, so R=G=B
+                            // Already flipped during ImageBitmap conversion
+                            const pixelIndex = i * 4;
+                            maskValue = maskData[pixelIndex] / 255; // Convert from 0-255 to 0-1 range
+                        } else {
+                            // For Float32Array or other formats, use flipped index
+                            maskValue = maskData[maskIndex] || 0;
+                        }
+                        
+                        // Sample some values for debugging
+                        if (i % 10000 === 0) {
+                            sampleValues.push(maskValue);
+                        }
+                        
+                        const isPersonPixel = maskValue > 0.5; // MediaPipe outputs values between 0 and 1
+                        
+                        if (isPersonPixel) {
+                            personPixelCount++;
+                        } else {
+                            backgroundPixelCount++;
+                        }
+                        
+                        const pixelIndex = i * 4;
+                        const x = i % img.width;
+                        const y = Math.floor(i / img.width);
+                        
+                        if (isPersonPixel) {
+                            // Draw person pixel on canvas
+                            const r = pixels[pixelIndex];
+                            const g = pixels[pixelIndex + 1];
+                            const b = pixels[pixelIndex + 2];
+                            
+                            ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+                            ctx.fillRect(x, y, 1, 1);
+                            
+                            // Debug mask - white for person
+                            debugMaskData.data[pixelIndex] = 255;
+                            debugMaskData.data[pixelIndex + 1] = 255;
+                            debugMaskData.data[pixelIndex + 2] = 255;
+                            debugMaskData.data[pixelIndex + 3] = 255;
+                        } else {
+                            // Background pixel - already drawn by createTiledBackground
+                            // Debug mask - black for background
+                            debugMaskData.data[pixelIndex] = 0;
+                            debugMaskData.data[pixelIndex + 1] = 0;
+                            debugMaskData.data[pixelIndex + 2] = 0;
+                            debugMaskData.data[pixelIndex + 3] = 255;
+                        }
+                    }
+                    
+                    console.log('Segmentation stats:');
+                    console.log('Person pixels:', personPixelCount);
+                    console.log('Background pixels:', backgroundPixelCount);
+                    console.log('Sample mask values:', sampleValues);
+                    console.log('Total pixels:', img.width * img.height);
+                    
+                    // Store the debug mask
+                    maskCtx.putImageData(debugMaskData, 0, 0);
+                    segmentationMask = maskCanvas;
+                    
+                } else {
+                    console.warn('No segmentation mask received, falling back to basic segmentation');
+                    applyBasicBackgroundRemoval(ctx, img);
+                }
+                
+            } catch (error) {
+                console.error('MediaPipe segmentation failed:', error);
+                applyBasicBackgroundRemoval(ctx, img);
+            }
+        }
+        
         function applyBasicBackgroundRemoval(ctx, img) {
             // Draw the image
             ctx.globalCompositeOperation = 'source-over';
@@ -311,25 +536,46 @@
             const maskData = maskImageData.data;
             
             // Simple edge detection to keep the person
-            // This is a very basic implementation - in production, use ML models
+            // This is a very basic implementation - fallback only
             for (let i = 0; i < data.length; i += 4) {
                 const r = data[i];
                 const g = data[i + 1];
                 const b = data[i + 2];
                 
-                // Simple heuristic: if pixel is very different from our collected samples,
-                // it might be background
-                let isBackground = true;
+                // Improved heuristic: check similarity to collected samples
+                let minColorDiff = Infinity;
                 for (let sample of colorSamples) {
                     const colorDiff = Math.abs(r - sample.r) + Math.abs(g - sample.g) + Math.abs(b - sample.b);
-                    if (colorDiff < 150) {
-                        isBackground = false;
-                        break;
-                    }
+                    minColorDiff = Math.min(minColorDiff, colorDiff);
                 }
                 
-                // If it's likely background, make it transparent
-                if (isBackground && (r + g + b) > 150) { // Avoid making dark areas transparent
+                // More sophisticated background detection
+                const brightness = (r + g + b) / 3;
+                const isVeryDark = brightness < 40;
+                const isVerySimilarToSample = minColorDiff < 80;
+                const isModeratelySimilarToSample = minColorDiff < 120;
+                
+                // Determine if this pixel is foreground (person)
+                let isForeground = false;
+                
+                if (isVerySimilarToSample) {
+                    // Very close to our color samples - definitely foreground
+                    isForeground = true;
+                } else if (isModeratelySimilarToSample && !isVeryDark) {
+                    // Moderately similar and not too dark - likely foreground
+                    isForeground = true;
+                } else if (brightness > 200 && minColorDiff > 150) {
+                    // Very bright and very different - likely background (wall, light, etc.)
+                    isForeground = false;
+                } else if (isVeryDark && minColorDiff > 100) {
+                    // Very dark and different - likely background shadow
+                    isForeground = false;
+                } else {
+                    // Default to foreground for ambiguous cases
+                    isForeground = true;
+                }
+                
+                if (!isForeground) {
                     data[i + 3] = 0; // Set alpha to 0
                     // Set mask to black (background)
                     maskData[i] = 0;
@@ -379,6 +625,7 @@
             currentSampleIndex = 0;
             capturedImage = null;
             segmentationMask = null;
+            // Note: selfieSegmentation and isSegmentationReady remain initialized
             
             // Reset UI
             document.getElementById('progress-fill').style.width = '0%';
