@@ -115,6 +115,7 @@
         let colorSamples = [];
         let currentSampleIndex = 0;
         let capturedImage;
+        let debugMode = false;
         
         async function startExperience() {
             try {
@@ -373,10 +374,10 @@
             
             if (debugMode) {
                 panel.style.display = 'block';
-                button.textContent = 'Hide Debug Mode';
+                button.textContent = '🔍 HIDE DEBUG';
             } else {
                 panel.style.display = 'none';
-                button.textContent = 'Show Debug Mode';
+                button.textContent = '🔍 DEBUG MODE';
             }
         }
         
