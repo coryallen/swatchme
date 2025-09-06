@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Color Sample Portrait</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+
+        .container {
+            text-align: center;
+            max-width: 800px;
+            padding: 20px;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .step {
+            display: none;
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        .step.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        video, canvas {
+            border: 3px solid white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            max-width: 100%;
+            margin: 20px 0;
+        }
+
+        .color-palette {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+
+        .color-sample {
+            width: 60px;
+            height: 60px;
+            border: 3px solid white;
+            border-radius: 50%;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        .color-sample:hover {
+            transform: scale(1.1);
+        }
+
+        .color-sample.collected {
+            border-color: #4CAF50;
+            border-width: 4px;
+        }
+
+        button {
+            background: linear-gradient(45deg, #FF6B6B, #4ECDC4);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 18px;
+            border-radius: 25px;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            margin: 10px;
+        }
+
+        button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.4);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .instructions {
+            background: rgba(255,255,255,0.1);
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px 0;
+            backdrop-filter: blur(10px);
+        }
+
+        .countdown {
+            font-size: 4em;
+            font-weight: bold;
+            color: #FFD700;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .crosshair {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #FF6B6B;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 10;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .crosshair.active {
+            opacity: 1;
+        }
+
+        .video-container {
+            position: relative;
+            display: inline-block;
+        }
+
+        .final-result {
+            margin: 20px 0;
+        }
+
+        .result-canvas {
+            border: 3px solid #4CAF50;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(255,255,255,0.3);
+            border-radius: 4px;
+            margin: 20px 0;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4CAF50, #45a049);
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Color Sample Portrait</h1>
+        
+        <!-- Step 1: Welcome -->
+        <div class="step active" id="welcome-step">
+            <div class="instructions">
+                <h2>Welcome to Color Sample Portrait!</h2>
+                <p>This app will guide you through capturing 5 color samples from your head and body, then create a beautiful portrait with a custom tiled background made from your colors.</p>
+                <p>Make sure you're in good lighting and your webcam is working.</p>
+            </div>
+            <button onclick="startExperience()">Start Experience</button>
+        </div>
+
+        <!-- Step 2: Color Sampling -->
+        <div class="step" id="sampling-step">
+            <div class="instructions">
+                <h2>Color Sampling (Step <span id="current-sample">1</span>/5)</h2>
+                <p>Click on different areas of your head and body in the video to collect color samples. Try to get a variety of skin tones, hair colors, and clothing colors.</p>
+            </div>
+            
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress-fill"></div>
+            </div>
+            
+            <div class="video-container">
+                <video id="video" width="640" height="480" autoplay></video>
+                <div class="crosshair" id="crosshair"></div>
+            </div>
+            
+            <div class="color-palette" id="color-palette">
+                <div class="color-sample" id="sample-0"></div>
+                <div class="color-sample" id="sample-1"></div>
+                <div class="color-sample" id="sample-2"></div>
+                <div class="color-sample" id="sample-3"></div>
+                <div class="color-sample" id="sample-4"></div>
+            </div>
+            
+            <button id="next-btn" onclick="proceedToPhotoStep()" disabled>Ready for Photo!</button>
+        </div>
+
+        <!-- Step 3: Photo Preparation -->
+        <div class="step" id="photo-prep-step">
+            <div class="instructions">
+                <h2>Strike Your Pose!</h2>
+                <p>Position yourself in the frame and strike your best pose. The countdown will begin when you click the button below.</p>
+            </div>
+            
+            <video id="photo-video" width="640" height="480" autoplay></video>
+            
+            <button onclick="startCountdown()">Start 3-Second Countdown</button>
+        </div>
+
+        <!-- Step 4: Countdown -->
+        <div class="step" id="countdown-step">
+            <div class="instructions">
+                <h2>Get Ready!</h2>
+            </div>
+            
+            <video id="countdown-video" width="640" height="480" autoplay></video>
+            
+            <div class="countdown" id="countdown-display">3</div>
+        </div>
+
+        <!-- Step 5: Final Result -->
+        <div class="step" id="result-step">
+            <div class="instructions">
+                <h2>Your Color Sample Portrait!</h2>
+                <p>Here's your photo with the background replaced by a beautiful pattern made from your color samples.</p>
+            </div>
+            
+            <div class="final-result">
+                <canvas id="result-canvas" class="result-canvas"></canvas>
+            </div>
+            
+            <div class="color-palette" id="final-palette"></div>
+            
+            <button onclick="downloadImage()">Download Image</button>
+            <button onclick="restartExperience()">Start Over</button>
+        </div>
+    </div>
+
+    <canvas id="hidden-canvas" style="display: none;"></canvas>
+
+    <script>
+        let stream;
+        let colorSamples = [];
+        let currentSampleIndex = 0;
+        let capturedImage;
+        
+        async function startExperience() {
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { width: 640, height: 480 } 
+                });
+                
+                const video = document.getElementById('video');
+                const photoVideo = document.getElementById('photo-video');
+                const countdownVideo = document.getElementById('countdown-video');
+                
+                video.srcObject = stream;
+                photoVideo.srcObject = stream;
+                countdownVideo.srcObject = stream;
+                
+                showStep('sampling-step');
+                setupColorSampling();
+            } catch (err) {
+                alert('Please allow camera access to continue.');
+                console.error('Error accessing camera:', err);
+            }
+        }
+
+        function setupColorSampling() {
+            const video = document.getElementById('video');
+            const crosshair = document.getElementById('crosshair');
+            
+            video.addEventListener('click', (e) => {
+                if (currentSampleIndex >= 5) return;
+                
+                const rect = video.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                
+                // Scale coordinates to video dimensions
+                const scaleX = video.videoWidth / rect.width;
+                const scaleY = video.videoHeight / rect.height;
+                const videoX = x * scaleX;
+                const videoY = y * scaleY;
+                
+                // Show crosshair at click position
+                crosshair.style.left = (x - 10) + 'px';
+                crosshair.style.top = (y - 10) + 'px';
+                crosshair.classList.add('active');
+                
+                setTimeout(() => crosshair.classList.remove('active'), 1000);
+                
+                // Capture color at clicked position
+                captureColorAtPosition(video, videoX, videoY);
+            });
+        }
+
+        function captureColorAtPosition(video, x, y) {
+            const canvas = document.getElementById('hidden-canvas');
+            const ctx = canvas.getContext('2d');
+            
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            
+            ctx.drawImage(video, 0, 0);
+            
+            // Get pixel data at clicked position
+            const imageData = ctx.getImageData(x, y, 1, 1);
+            const [r, g, b] = imageData.data;
+            
+            const color = `rgb(${r}, ${g}, ${b})`;
+            colorSamples.push({ r, g, b, color });
+            
+            // Update UI
+            const sampleElement = document.getElementById(`sample-${currentSampleIndex}`);
+            sampleElement.style.backgroundColor = color;
+            sampleElement.classList.add('collected');
+            
+            currentSampleIndex++;
+            document.getElementById('current-sample').textContent = Math.min(currentSampleIndex + 1, 5);
+            
+            // Update progress bar
+            const progress = (currentSampleIndex / 5) * 100;
+            document.getElementById('progress-fill').style.width = progress + '%';
+            
+            if (currentSampleIndex >= 5) {
+                document.getElementById('next-btn').disabled = false;
+            }
+        }
+
+        function proceedToPhotoStep() {
+            showStep('photo-prep-step');
+        }
+
+        function startCountdown() {
+            showStep('countdown-step');
+            
+            let count = 3;
+            const display = document.getElementById('countdown-display');
+            
+            const countInterval = setInterval(() => {
+                display.textContent = count;
+                
+                if (count <= 0) {
+                    clearInterval(countInterval);
+                    capturePhoto();
+                } else {
+                    count--;
+                }
+            }, 1000);
+        }
+
+        function capturePhoto() {
+            const video = document.getElementById('countdown-video');
+            const canvas = document.getElementById('hidden-canvas');
+            const ctx = canvas.getContext('2d');
+            
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            
+            // Draw current video frame
+            ctx.drawImage(video, 0, 0);
+            
+            // Store the captured image
+            capturedImage = canvas.toDataURL('image/png');
+            
+            // Stop the video stream
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+            }
+            
+            // Process the image and show result
+            processImageWithBackground();
+        }
+
+        function processImageWithBackground() {
+            const canvas = document.getElementById('result-canvas');
+            const ctx = canvas.getContext('2d');
+            
+            const img = new Image();
+            img.onload = function() {
+                canvas.width = img.width;
+                canvas.height = img.height;
+                
+                // Create tiled pattern background
+                createTiledBackground(ctx, img.width, img.height);
+                
+                // Apply simple background removal (this is a basic implementation)
+                // In a real app, you'd use a more sophisticated algorithm like BodyPix or MediaPipe
+                applyBasicBackgroundRemoval(ctx, img);
+                
+                // Show final result
+                showStep('result-step');
+                displayFinalPalette();
+            };
+            img.src = capturedImage;
+        }
+
+        function createTiledBackground(ctx, width, height) {
+            const tileSize = 40;
+            
+            for (let y = 0; y < height; y += tileSize) {
+                for (let x = 0; x < width; x += tileSize) {
+                    const colorIndex = Math.floor(Math.random() * colorSamples.length);
+                    const color = colorSamples[colorIndex].color;
+                    
+                    ctx.fillStyle = color;
+                    ctx.fillRect(x, y, tileSize, tileSize);
+                    
+                    // Add some variation
+                    const variation = Math.random() * 0.3 - 0.15;
+                    ctx.globalAlpha = 0.7 + variation;
+                    ctx.fillRect(x, y, tileSize, tileSize);
+                    ctx.globalAlpha = 1;
+                }
+            }
+        }
+
+        function applyBasicBackgroundRemoval(ctx, img) {
+            // Draw the image
+            ctx.globalCompositeOperation = 'source-over';
+            ctx.drawImage(img, 0, 0);
+            
+            // Get image data for processing
+            const imageData = ctx.getImageData(0, 0, img.width, img.height);
+            const data = imageData.data;
+            
+            // Simple edge detection to keep the person
+            // This is a very basic implementation - in production, use ML models
+            for (let i = 0; i < data.length; i += 4) {
+                const r = data[i];
+                const g = data[i + 1];
+                const b = data[i + 2];
+                
+                // Simple heuristic: if pixel is very different from our collected samples,
+                // it might be background
+                let isBackground = true;
+                for (let sample of colorSamples) {
+                    const colorDiff = Math.abs(r - sample.r) + Math.abs(g - sample.g) + Math.abs(b - sample.b);
+                    if (colorDiff < 150) {
+                        isBackground = false;
+                        break;
+                    }
+                }
+                
+                // If it's likely background, make it transparent
+                if (isBackground && (r + g + b) > 150) { // Avoid making dark areas transparent
+                    data[i + 3] = 0; // Set alpha to 0
+                }
+            }
+            
+            // Apply the processed image data
+            ctx.putImageData(imageData, 0, 0);
+        }
+
+        function displayFinalPalette() {
+            const palette = document.getElementById('final-palette');
+            palette.innerHTML = '';
+            
+            colorSamples.forEach((sample, index) => {
+                const sampleDiv = document.createElement('div');
+                sampleDiv.className = 'color-sample collected';
+                sampleDiv.style.backgroundColor = sample.color;
+                palette.appendChild(sampleDiv);
+            });
+        }
+
+        function downloadImage() {
+            const canvas = document.getElementById('result-canvas');
+            const link = document.createElement('a');
+            link.download = 'color-sample-portrait.png';
+            link.href = canvas.toDataURL();
+            link.click();
+        }
+
+        function restartExperience() {
+            // Reset all variables
+            colorSamples = [];
+            currentSampleIndex = 0;
+            capturedImage = null;
+            
+            // Reset UI
+            document.getElementById('progress-fill').style.width = '0%';
+            document.getElementById('current-sample').textContent = '1';
+            document.getElementById('next-btn').disabled = true;
+            
+            // Clear color samples
+            for (let i = 0; i < 5; i++) {
+                const sample = document.getElementById(`sample-${i}`);
+                sample.style.backgroundColor = '';
+                sample.classList.remove('collected');
+            }
+            
+            showStep('welcome-step');
+        }
+
+        function showStep(stepId) {
+            document.querySelectorAll('.step').forEach(step => {
+                step.classList.remove('active');
+            });
+            document.getElementById(stepId).classList.add('active');
+        }
+    </script>
+</body>
+</html>
