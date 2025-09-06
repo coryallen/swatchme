@@ -262,6 +262,9 @@
                 // In a real app, you'd use a more sophisticated algorithm like BodyPix or MediaPipe
                 applyBasicBackgroundRemoval(ctx, img);
                 
+                // Update debug panels with available data
+                updateDebugPanels(img, { segmentationMask: null });
+                
                 // Show final result
                 showStep('result-step');
                 displayFinalPalette();
@@ -391,7 +394,7 @@
             const debugMask = document.getElementById('debug-mask');
             const debugMaskCtx = debugMask.getContext('2d');
             
-            if (segmentationResults.segmentationMask) {
+            if (segmentationResults && segmentationResults.segmentationMask) {
                 const mask = segmentationResults.segmentationMask;
                 
                 // Handle different mask formats
@@ -423,14 +426,16 @@
                     
                     tempCtx.putImageData(tempImageData, 0, 0);
                     debugMaskCtx.drawImage(tempCanvas, 0, 0, 320, 240);
-                } else {
-                    // No mask available
-                    debugMaskCtx.fillStyle = 'red';
-                    debugMaskCtx.fillRect(0, 0, 320, 240);
-                    debugMaskCtx.fillStyle = 'white';
-                    debugMaskCtx.font = '16px Arial';
-                    debugMaskCtx.fillText('No Mask Data', 100, 120);
                 }
+            } else {
+                // No mask available - show placeholder
+                debugMaskCtx.fillStyle = '#333';
+                debugMaskCtx.fillRect(0, 0, 320, 240);
+                debugMaskCtx.fillStyle = 'white';
+                debugMaskCtx.font = '14px Arial';
+                debugMaskCtx.textAlign = 'center';
+                debugMaskCtx.fillText('Basic Background Removal', 160, 110);
+                debugMaskCtx.fillText('(No ML Segmentation)', 160, 130);
             }
             
             // Debug 3: Tiled background
