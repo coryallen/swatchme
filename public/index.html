@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Color Sample Portrait</title>
     <link rel="stylesheet" href="styles.css">
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
@@ -37,7 +37,7 @@
             </div>
             
             <div class="video-container">
-                <video id="video" width="640" height="480" autoplay></video>
+                <video id="video" width="640" height="480" autoplay playsinline muted></video>
                 <div class="crosshair" id="crosshair"></div>
             </div>
             
@@ -59,7 +59,7 @@
                 <p>Position yourself in the frame and strike your best pose. The countdown will begin when you click the button below.</p>
             </div>
             
-            <video id="photo-video" width="640" height="480" autoplay></video>
+            <video id="photo-video" width="640" height="480" autoplay playsinline muted></video>
             
             <button onclick="startCountdown()">Start 3-Second Countdown</button>
         </div>
@@ -70,7 +70,7 @@
                 <h2>Get Ready!</h2>
             </div>
             
-            <video id="countdown-video" width="640" height="480" autoplay></video>
+            <video id="countdown-video" width="640" height="480" autoplay playsinline muted></video>
             
             <div class="countdown" id="countdown-display">3</div>
         </div>
