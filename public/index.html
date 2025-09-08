@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Selfie Swatch</title>
-    <link rel="stylesheet" href="/selfieswatch/styles.css">
+    <link rel="stylesheet" href="./styles.css">
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
@@ -204,7 +204,8 @@
                 // Scale coordinates to video dimensions
                 const scaleX = video.videoWidth / rect.width;
                 const scaleY = video.videoHeight / rect.height;
-                const videoX = x * scaleX;
+                // Flip x-coordinate because video is mirrored but video data isn't
+                const videoX = video.videoWidth - (x * scaleX);
                 const videoY = y * scaleY;
                 
                 // Show crosshair at click position
@@ -403,7 +404,6 @@
             const tileSize = adjustedTileSize;
             
             // Create a 2D array to track color indices for adjacency checking
-            const columns = Math.ceil(width / tileSize);
             const rows = Math.ceil(height / tileSize);
             const tileColors = [];
             

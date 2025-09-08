@@ -59,6 +59,11 @@ video, canvas {
     display: block;
 }
 
+/* Mirror video elements for natural selfie experience */
+video {
+    transform: scaleX(-1);
+}
+
 /* Mobile-specific video constraints */
 @media (max-width: 768px) {
     video {
