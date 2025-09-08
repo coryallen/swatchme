@@ -159,11 +159,14 @@
         window.addEventListener('load', initializeSegmentation);
         
         async function startExperience() {
+            console.log('startExperience called'); // Debug log
             try {
+                console.log('Requesting camera access...'); // Debug log
                 stream = await navigator.mediaDevices.getUserMedia({ 
                     video: { width: 640, height: 480 } 
                 });
                 
+                console.log('Camera access granted, setting up videos...'); // Debug log
                 const video = document.getElementById('video');
                 const photoVideo = document.getElementById('photo-video');
                 const countdownVideo = document.getElementById('countdown-video');
@@ -172,11 +175,12 @@
                 photoVideo.srcObject = stream;
                 countdownVideo.srcObject = stream;
                 
+                console.log('Showing sampling step...'); // Debug log
                 showStep('sampling-step');
                 setupColorSampling();
             } catch (err) {
+                console.error('Error in startExperience:', err); // Enhanced error logging
                 alert('Please allow camera access to continue.');
-                console.error('Error accessing camera:', err);
             }
         }
 
@@ -309,6 +313,78 @@
             img.src = capturedImage;
         }
 
+        function blurMask(ctx, width, height) {
+            // Apply a box blur to the mask to smooth jagged edges
+            const blurRadius = 2; // Adjust for more/less blur
+            
+            // Get the current mask data
+            const originalData = ctx.getImageData(0, 0, width, height);
+            const blurredData = ctx.createImageData(width, height);
+            
+            // Copy original data to blurred data as starting point
+            for (let i = 0; i < originalData.data.length; i++) {
+                blurredData.data[i] = originalData.data[i];
+            }
+            
+            // Apply horizontal blur pass
+            for (let y = 0; y < height; y++) {
+                for (let x = 0; x < width; x++) {
+                    let r = 0, g = 0, b = 0, a = 0, count = 0;
+                    
+                    // Sample pixels in horizontal direction
+                    for (let bx = -blurRadius; bx <= blurRadius; bx++) {
+                        const sampleX = Math.max(0, Math.min(width - 1, x + bx));
+                        const sampleIndex = (y * width + sampleX) * 4;
+                        
+                        r += originalData.data[sampleIndex];
+                        g += originalData.data[sampleIndex + 1];
+                        b += originalData.data[sampleIndex + 2];
+                        a += originalData.data[sampleIndex + 3];
+                        count++;
+                    }
+                    
+                    const pixelIndex = (y * width + x) * 4;
+                    blurredData.data[pixelIndex] = r / count;
+                    blurredData.data[pixelIndex + 1] = g / count;
+                    blurredData.data[pixelIndex + 2] = b / count;
+                    blurredData.data[pixelIndex + 3] = a / count;
+                }
+            }
+            
+            // Copy blurred data back to original for vertical pass
+            for (let i = 0; i < originalData.data.length; i++) {
+                originalData.data[i] = blurredData.data[i];
+            }
+            
+            // Apply vertical blur pass
+            for (let y = 0; y < height; y++) {
+                for (let x = 0; x < width; x++) {
+                    let r = 0, g = 0, b = 0, a = 0, count = 0;
+                    
+                    // Sample pixels in vertical direction
+                    for (let by = -blurRadius; by <= blurRadius; by++) {
+                        const sampleY = Math.max(0, Math.min(height - 1, y + by));
+                        const sampleIndex = (sampleY * width + x) * 4;
+                        
+                        r += originalData.data[sampleIndex];
+                        g += originalData.data[sampleIndex + 1];
+                        b += originalData.data[sampleIndex + 2];
+                        a += originalData.data[sampleIndex + 3];
+                        count++;
+                    }
+                    
+                    const pixelIndex = (y * width + x) * 4;
+                    blurredData.data[pixelIndex] = r / count;
+                    blurredData.data[pixelIndex + 1] = g / count;
+                    blurredData.data[pixelIndex + 2] = b / count;
+                    blurredData.data[pixelIndex + 3] = a / count;
+                }
+            }
+            
+            // Apply the blurred mask back to the canvas
+            ctx.putImageData(blurredData, 0, 0);
+        }
+
         function createTiledBackground(ctx, width, height) {
             const targetTileSize = 120;
             
@@ -370,9 +446,6 @@
                 if (results && results.segmentationMask) {
                     console.log('MediaPipe segmentation successful');
                     
-                    // Create tiled pattern background first
-                    createTiledBackground(ctx, img.width, img.height);
-                    
                     // Get the segmentation mask - handle different formats
                     const mask = results.segmentationMask;
                     console.log('Raw mask object:', mask);
@@ -428,8 +501,8 @@
                     const debugMaskData = maskCtx.createImageData(img.width, img.height);
                     
                     // Get original image data
-                    const imageData = tempCtx.getImageData(0, 0, img.width, img.height);
-                    const pixels = imageData.data;
+                    const originalImageData = tempCtx.getImageData(0, 0, img.width, img.height);
+                    const pixels = originalImageData.data;
                     
                     // Sample some mask values for debugging
                     let personPixelCount = 0;
@@ -440,7 +513,14 @@
                     const isRGBAData = mask instanceof ImageBitmap;
                     const stride = isRGBAData ? 4 : 1; // RGBA has 4 values per pixel, others have 1
                     
-                    // Apply segmentation
+                    // Create a smooth mask canvas for compositing
+                    const smoothMaskCanvas = document.createElement('canvas');
+                    smoothMaskCanvas.width = img.width;
+                    smoothMaskCanvas.height = img.height;
+                    const smoothMaskCtx = smoothMaskCanvas.getContext('2d');
+                    const smoothMaskData = smoothMaskCtx.createImageData(img.width, img.height);
+                    
+                    // Apply segmentation to create smooth mask
                     for (let i = 0; i < img.width * img.height; i++) {
                         let maskValue;
                         let maskIndex = i;
@@ -455,8 +535,6 @@
                         
                         if (isRGBAData) {
                             // For ImageBitmap converted to ImageData, use the red channel as the mask value
-                            // MediaPipe masks are grayscale, so R=G=B
-                            // Already flipped during ImageBitmap conversion
                             const pixelIndex = i * 4;
                             maskValue = maskData[pixelIndex] / 255; // Convert from 0-255 to 0-1 range
                         } else {
@@ -469,7 +547,7 @@
                             sampleValues.push(maskValue);
                         }
                         
-                        const isPersonPixel = maskValue > 0.5; // MediaPipe outputs values between 0 and 1
+                        const isPersonPixel = maskValue > 0.5;
                         
                         if (isPersonPixel) {
                             personPixelCount++;
@@ -478,32 +556,64 @@
                         }
                         
                         const pixelIndex = i * 4;
-                        const x = i % img.width;
-                        const y = Math.floor(i / img.width);
                         
+                        // Store mask values (0-255 range) for smoothing
+                        // Use the raw mask value (higher = more person, lower = more background)
+                        const maskIntensity = Math.round(maskValue * 255);
+                        smoothMaskData.data[pixelIndex] = maskIntensity;
+                        smoothMaskData.data[pixelIndex + 1] = maskIntensity;
+                        smoothMaskData.data[pixelIndex + 2] = maskIntensity;
+                        smoothMaskData.data[pixelIndex + 3] = 255;
+                        
+                        // Debug mask - simple binary for debug view
                         if (isPersonPixel) {
-                            // Draw person pixel on canvas
-                            const r = pixels[pixelIndex];
-                            const g = pixels[pixelIndex + 1];
-                            const b = pixels[pixelIndex + 2];
-                            
-                            ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
-                            ctx.fillRect(x, y, 1, 1);
-                            
-                            // Debug mask - white for person
                             debugMaskData.data[pixelIndex] = 255;
                             debugMaskData.data[pixelIndex + 1] = 255;
                             debugMaskData.data[pixelIndex + 2] = 255;
                             debugMaskData.data[pixelIndex + 3] = 255;
                         } else {
-                            // Background pixel - already drawn by createTiledBackground
-                            // Debug mask - black for background
                             debugMaskData.data[pixelIndex] = 0;
                             debugMaskData.data[pixelIndex + 1] = 0;
                             debugMaskData.data[pixelIndex + 2] = 0;
                             debugMaskData.data[pixelIndex + 3] = 255;
                         }
                     }
+                    
+                    // Apply the smooth mask to canvas and blur it
+                    smoothMaskCtx.putImageData(smoothMaskData, 0, 0);
+                    blurMask(smoothMaskCtx, img.width, img.height);
+                    
+                    // Now create the final composite image
+                    // Step 1: Draw tiled background
+                    createTiledBackground(ctx, img.width, img.height);
+                    
+                    // Step 2: Use the blurred mask to composite person over background
+                    const personImageData = tempCtx.getImageData(0, 0, img.width, img.height);
+                    const blurredMaskData = smoothMaskCtx.getImageData(0, 0, img.width, img.height);
+                    const backgroundData = ctx.getImageData(0, 0, img.width, img.height);
+                    
+                    // Blend person and background based on mask
+                    for (let i = 0; i < personImageData.data.length; i += 4) {
+                        const maskValue = blurredMaskData.data[i] / 255; // 0-1 range
+                        
+                        // Mix person and background pixels based on mask value
+                        const personR = personImageData.data[i];
+                        const personG = personImageData.data[i + 1];
+                        const personB = personImageData.data[i + 2];
+                        
+                        const bgR = backgroundData.data[i];
+                        const bgG = backgroundData.data[i + 1];
+                        const bgB = backgroundData.data[i + 2];
+                        
+                        // maskValue closer to 1 = more person, closer to 0 = more background
+                        backgroundData.data[i] = Math.round(personR * maskValue + bgR * (1 - maskValue));
+                        backgroundData.data[i + 1] = Math.round(personG * maskValue + bgG * (1 - maskValue));
+                        backgroundData.data[i + 2] = Math.round(personB * maskValue + bgB * (1 - maskValue));
+                        // Alpha stays at 255
+                    }
+                    
+                    // Draw the blended result
+                    ctx.putImageData(backgroundData, 0, 0);
                     
                     console.log('Segmentation stats:');
                     console.log('Person pixels:', personPixelCount);
@@ -513,6 +623,10 @@
                     
                     // Store the debug mask
                     maskCtx.putImageData(debugMaskData, 0, 0);
+                    
+                    // Apply blur to smooth edges
+                    blurMask(maskCtx, img.width, img.height);
+                    
                     segmentationMask = maskCanvas;
                     
                 } else {
@@ -532,8 +646,8 @@
             ctx.drawImage(img, 0, 0);
             
             // Get image data for processing
-            const imageData = ctx.getImageData(0, 0, img.width, img.height);
-            const data = imageData.data;
+            const fallbackImageData = ctx.getImageData(0, 0, img.width, img.height);
+            const data = fallbackImageData.data;
             
             // Create segmentation mask for debug view
             const maskCanvas = document.createElement('canvas');
@@ -601,10 +715,14 @@
             
             // Store the segmentation mask
             maskCtx.putImageData(maskImageData, 0, 0);
+            
+            // Apply blur to smooth edges
+            blurMask(maskCtx, img.width, img.height);
+            
             segmentationMask = maskCanvas;
             
             // Apply the processed image data
-            ctx.putImageData(imageData, 0, 0);
+            ctx.putImageData(fallbackImageData, 0, 0);
         }
 
         function displayFinalPalette() {
@@ -720,17 +838,19 @@
             document.body.style.overflow = 'hidden';
             
             // Restore body scroll when modal is removed
-            const observer = new MutationObserver((mutations) => {
-                mutations.forEach((mutation) => {
-                    if (mutation.type === 'childList') {
-                        if (!document.contains(overlay)) {
-                            document.body.style.overflow = '';
-                            observer.disconnect();
+            if (document.body) {
+                const observer = new MutationObserver((mutations) => {
+                    mutations.forEach((mutation) => {
+                        if (mutation.type === 'childList') {
+                            if (!document.contains(overlay)) {
+                                document.body.style.overflow = '';
+                                observer.disconnect();
+                            }
                         }
-                    }
+                    });
                 });
-            });
-            observer.observe(document.body, { childList: true });
+                observer.observe(document.body, { childList: true });
+            }
         }
 
         function restartExperience() {
