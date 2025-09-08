@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Color Sample Portrait</title>
+    <title>Selfie Swatch</title>
     <link rel="stylesheet" href="styles.css">
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
@@ -12,15 +12,16 @@
 </head>
 <body>
     <div class="container">
-        <h1>Color Sample Portrait</h1>
+        <h1>Selfie Swatch</h1>
         
         <!-- Step 1: Welcome -->
         <div class="step active" id="welcome-step">
             <div class="instructions">
-                <h2>Welcome to Color Sample Portrait!</h2>
+                <h2>Welcome to Selfie Swatch!</h2>
                 <p>This app will guide you through capturing 5 color samples from your head and body, then create a beautiful portrait with a custom tiled background made from your colors.</p>
                 <p>Make sure you're in good lighting and your webcam is working.</p>
                 <p><strong>Note:</strong> This app uses advanced AI body segmentation for precise background removal!</p>
+                <p style="font-size: 14px; opacity: 0.8; margin-top: 15px;">Created by Cory Allen and Danna Feintuch<br>Built with the help of Claude.ai</p>
             </div>
             <button onclick="startExperience()">Start Experience</button>
         </div>
@@ -78,7 +79,7 @@
         <!-- Step 5: Final Result -->
         <div class="step" id="result-step">
             <div class="instructions">
-                <h2>Your Color Sample Portrait!</h2>
+                <h2>Your Selfie Swatch!</h2>
                 <p>Here's your photo with the background replaced by a beautiful pattern made from your color samples.</p>
             </div>
             
@@ -88,9 +89,14 @@
             
             <div class="color-palette" id="final-palette"></div>
             
-            <button onclick="downloadImage()">Download Image</button>
-            <button onclick="restartExperience()">Start Over</button>
-            <button onclick="toggleDebugMode()" id="debug-toggle" style="background: linear-gradient(45deg, #FF8C00, #FF6347); color: white; border: 2px solid white; padding: 15px 30px; margin: 20px; border-radius: 25px; cursor: pointer; font-size: 18px; box-shadow: 0 5px 15px rgba(0,0,0,0.3);">🔍 DEBUG MODE</button>
+            <div class="main-buttons">
+                <button onclick="downloadImage()">Download Image</button>
+                <button onclick="restartExperience()">Start Over</button>
+            </div>
+            
+            <div class="debug-button-container">
+                <button onclick="toggleDebugMode()" id="debug-toggle" class="debug-button">🔍 DEBUG MODE</button>
+            </div>
 
 <div class="debug-panel" id="debug-panel" style="display: none; background: rgba(255,255,255,0.1); padding: 20px; border-radius: 15px; margin: 20px 0; backdrop-filter: blur(10px);">
     <h3 style="color: white; margin-bottom: 15px;">Debug Information</h3>
