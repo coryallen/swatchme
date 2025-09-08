@@ -193,9 +193,12 @@
         function setupColorSampling() {
             const video = document.getElementById('video');
             const crosshair = document.getElementById('crosshair');
+            let isCapturing = false;
             
             video.addEventListener('click', (e) => {
-                if (currentSampleIndex >= 5) return;
+                if (currentSampleIndex >= 5 || isCapturing) return;
+                
+                isCapturing = true;
                 
                 const rect = video.getBoundingClientRect();
                 const x = e.clientX - rect.left;
@@ -216,11 +219,13 @@
                 setTimeout(() => crosshair.classList.remove('active'), 1000);
                 
                 // Capture color at clicked position
-                captureColorAtPosition(video, videoX, videoY);
+                captureColorAtPosition(video, videoX, videoY, () => {
+                    isCapturing = false;
+                });
             });
         }
 
-        function captureColorAtPosition(video, x, y) {
+        function captureColorAtPosition(video, x, y, callback) {
             const canvas = document.getElementById('hidden-canvas');
             const ctx = canvas.getContext('2d');
             
@@ -251,6 +256,9 @@
             if (currentSampleIndex >= 5) {
                 document.getElementById('next-btn').disabled = false;
             }
+            
+            // Call callback to reset capturing flag
+            if (callback) callback();
         }
 
         function proceedToPhotoStep() {
