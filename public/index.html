@@ -4,7 +4,34 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Selfie Swatch</title>
-    <link rel="stylesheet" href="./styles.css">
+    <!-- <link rel="stylesheet" href="./styles.css"> -->
+     <script>
+        // Detect if we're in a subdirectory deployment
+        function getBasePath() {
+            const path = window.location.pathname;
+            
+            // If accessing via subdirectory without trailing slash, add the base path
+            if (path === '/selfieswatch' || path.startsWith('/selfieswatch/')) {
+                return '/selfieswatch/';
+            }
+            
+            // For local development or root deployment
+            return './';
+        }
+        
+        // Function to load CSS with correct path
+        function loadCSS(filename) {
+            const link = document.createElement('link');
+            link.rel = 'stylesheet';
+            link.href = getBasePath() + filename;
+            document.head.appendChild(link);
+        }
+        
+        // Load your CSS files
+        loadCSS('styles.css');
+        // Add more CSS files as needed
+        // loadCSS('another-style.css');
+    </script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
