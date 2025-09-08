@@ -402,10 +402,45 @@
             // Use the adjusted tile size for both width and height to maintain square tiles
             const tileSize = adjustedTileSize;
             
-            for (let y = 0; y < height; y += tileSize) {
-                for (let x = 0; x < width; x += tileSize) {
-                    const colorIndex = Math.floor(Math.random() * colorSamples.length);
+            // Create a 2D array to track color indices for adjacency checking
+            const columns = Math.ceil(width / tileSize);
+            const rows = Math.ceil(height / tileSize);
+            const tileColors = [];
+            
+            for (let row = 0; row < rows; row++) {
+                tileColors[row] = [];
+                for (let col = 0; col < columns; col++) {
+                    // Get adjacent tile colors to avoid duplicates
+                    const adjacentColors = new Set();
+                    
+                    // Check left neighbor
+                    if (col > 0) {
+                        adjacentColors.add(tileColors[row][col - 1]);
+                    }
+                    
+                    // Check top neighbor
+                    if (row > 0) {
+                        adjacentColors.add(tileColors[row - 1][col]);
+                    }
+                    
+                    // Find available colors (not adjacent)
+                    const availableColors = [];
+                    for (let i = 0; i < colorSamples.length; i++) {
+                        if (!adjacentColors.has(i)) {
+                            availableColors.push(i);
+                        }
+                    }
+                    
+                    // If no colors available (shouldn't happen with 5+ colors), use any color
+                    const colorIndex = availableColors.length > 0 
+                        ? availableColors[Math.floor(Math.random() * availableColors.length)]
+                        : Math.floor(Math.random() * colorSamples.length);
+                    
+                    tileColors[row][col] = colorIndex;
+                    
                     const color = colorSamples[colorIndex].color;
+                    const x = col * tileSize;
+                    const y = row * tileSize;
                     
                     ctx.fillStyle = color;
                     ctx.fillRect(x, y, tileSize, tileSize);
