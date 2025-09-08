@@ -474,16 +474,18 @@
                     tileColors[row][col] = colorIndex;
                     
                     const color = colorSamples[colorIndex].color;
-                    const x = col * tileSize;
-                    const y = row * tileSize;
+                    const x = Math.floor(col * tileSize);
+                    const y = Math.floor(row * tileSize);
+                    const actualTileWidth = Math.floor((col + 1) * tileSize) - x;
+                    const actualTileHeight = Math.floor((row + 1) * tileSize) - y;
                     
                     ctx.fillStyle = color;
-                    ctx.fillRect(x, y, tileSize, tileSize);
+                    ctx.fillRect(x, y, actualTileWidth, actualTileHeight);
                     
                     // Add some variation
                     const variation = Math.random() * 0.3 - 0.15;
                     ctx.globalAlpha = 0.7 + variation;
-                    ctx.fillRect(x, y, tileSize, tileSize);
+                    ctx.fillRect(x, y, actualTileWidth, actualTileHeight);
                     ctx.globalAlpha = 1;
                 }
             }
