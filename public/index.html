@@ -77,25 +77,14 @@
                 <div class="color-sample" id="sample-4"></div>
             </div>
             
-            <button id="next-btn" onclick="proceedToPhotoStep()" disabled>Ready for Photo!</button>
+            <button id="next-btn" onclick="startCountdown()" disabled>Start 3-Second Countdown!</button>
         </div>
 
-        <!-- Step 3: Photo Preparation -->
-        <div class="step" id="photo-prep-step">
-            <div class="instructions">
-                <h2>Strike Your Pose!</h2>
-                <p>Position yourself in the frame and strike your best pose. The countdown will begin when you click the button below.</p>
-            </div>
-            
-            <video id="photo-video" width="640" height="480" autoplay playsinline muted></video>
-            
-            <button onclick="startCountdown()">Start 3-Second Countdown</button>
-        </div>
-
-        <!-- Step 4: Countdown -->
+        <!-- Step 3: Countdown -->
         <div class="step" id="countdown-step">
             <div class="instructions">
                 <h2>Get Ready!</h2>
+                <p>Strike your best pose! The photo will be taken automatically.</p>
             </div>
             
             <video id="countdown-video" width="640" height="480" autoplay playsinline muted></video>
@@ -201,11 +190,9 @@
                 
                 console.log('Camera access granted, setting up videos...'); // Debug log
                 const video = document.getElementById('video');
-                const photoVideo = document.getElementById('photo-video');
                 const countdownVideo = document.getElementById('countdown-video');
                 
                 video.srcObject = stream;
-                photoVideo.srcObject = stream;
                 countdownVideo.srcObject = stream;
                 
                 console.log('Showing sampling step...'); // Debug log
@@ -238,12 +225,10 @@
                 const videoX = video.videoWidth - (x * scaleX);
                 const videoY = y * scaleY;
                 
-                // Show crosshair at click position
-                crosshair.style.left = (x - 10) + 'px';
-                crosshair.style.top = (y - 10) + 'px';
+                // Show crosshair at click position (centered on click)
+                crosshair.style.left = (x - 30) + 'px';
+                crosshair.style.top = (y - 30) + 'px';
                 crosshair.classList.add('active');
-                
-                setTimeout(() => crosshair.classList.remove('active'), 1000);
                 
                 // Capture color at clicked position
                 captureColorAtPosition(video, videoX, videoY, () => {
@@ -268,6 +253,17 @@
             const color = `rgb(${r}, ${g}, ${b})`;
             colorSamples.push({ r, g, b, color });
             
+            // Fill crosshair with the sampled color
+            const crosshair = document.getElementById('crosshair');
+            crosshair.style.backgroundColor = color;
+            crosshair.style.borderColor = 'white';
+            
+            // Hide crosshair after showing the color
+            setTimeout(() => {
+                crosshair.classList.remove('active');
+                crosshair.style.backgroundColor = '';
+            }, 1500);
+            
             // Update UI
             const sampleElement = document.getElementById(`sample-${currentSampleIndex}`);
             sampleElement.style.backgroundColor = color;
@@ -286,10 +282,6 @@
             
             // Call callback to reset capturing flag
             if (callback) callback();
-        }
-
-        function proceedToPhotoStep() {
-            showStep('photo-prep-step');
         }
 
         function startCountdown() {
