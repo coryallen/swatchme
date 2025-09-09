@@ -63,9 +63,15 @@ video, canvas {
     display: block;
 }
 
-/* Mirror video elements for natural selfie experience */
-video {
-    transform: scaleX(-1);
+/* Video mirroring classes - controlled by JavaScript based on camera type */
+video.mirror-front {
+    transform: scaleX(-1) !important;
+    -webkit-transform: scaleX(-1) !important;
+}
+
+video.mirror-back {
+    transform: scaleX(1) !important;
+    -webkit-transform: scaleX(1) !important;
 }
 
 /* Mobile-specific video constraints */
@@ -415,4 +421,46 @@ button:disabled {
     transform: none !important;
     background: rgba(0, 0, 0, 0.3) !important;
     border-color: rgba(255, 255, 255, 0.3) !important;
+}
+
+/* Camera Selection Dropdown */
+.camera-selection {
+    margin: 15px 0;
+    padding: 10px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 15px;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.camera-selection label {
+    color: white;
+    font-weight: 600;
+    margin-right: 10px;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+#camera-select {
+    background: rgba(255, 255, 255, 0.15);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 500;
+    min-width: 200px;
+    backdrop-filter: blur(5px);
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+#camera-select:focus {
+    outline: none;
+    border-color: rgba(255, 255, 255, 0.6);
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+}
+
+#camera-select option {
+    background: rgba(0, 0, 0, 0.9);
+    color: white;
+    padding: 5px;
 }
