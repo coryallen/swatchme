@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Swatch Me</title>
+    <title>SWATCH ME</title>
     <!-- <link rel="stylesheet" href="./styles.css"> -->
      <script>
         // Detect if we're in a subdirectory deployment
@@ -39,12 +39,12 @@
 </head>
 <body>
     <div class="container">
-        <h1>Swatch Me</h1>
+        <h1>SWATCH ME</h1>
         
         <!-- Step 1: Welcome -->
         <div class="step active" id="welcome-step">
             <div class="instructions">
-                <h2>Welcome to Swatch Me!</h2>
+                <h2>Welcome to SWATCH ME!</h2>
                 <p>This app will guide you through capturing 5 color samples from your head and body, then create a beautiful portrait with a custom tiled background made from the colors which make up you!</p>
                 <p>Make sure you're in good lighting and your webcam is working.</p>
                 <p style="font-size: 11px; opacity: 0.8; margin-top: 15px;">Created by <a href="http://heymilkman.com">Cory Allen</a> and <a href="https://www.instagram.com/dannavision/">Danna Feintuch</a><br>
@@ -110,7 +110,7 @@
         <!-- Step 5: Final Result -->
         <div class="step" id="result-step">
             <div class="instructions">
-                <h2>Your Swatch Me!</h2>
+                <h2>Your SWATCH ME!</h2>
                 <p>Here's your photo with the background replaced by a beautiful pattern of your colors!</p>
             </div>
             
@@ -121,7 +121,7 @@
             <div class="color-palette" id="final-palette"></div>
             
             <div class="main-buttons">
-                <button onclick="downloadImage()">Download Image</button>
+                <button onclick="downloadImage()">Share/Download Image</button>
                 <button onclick="restartExperience()">Start Over</button>
             </div>
             
@@ -668,6 +668,9 @@
                 // Apply MediaPipe segmentation (with fallback to basic method)
                 await applyMediaPipeSegmentation(ctx, img);
                 
+                // Add logo in bottom right corner
+                await addLogoToCanvas(ctx, canvas.width, canvas.height);
+                
                 // Update debug panels with available data
                 updateDebugPanels(img, { segmentationMask: segmentationMask });
                 
@@ -676,6 +679,61 @@
                 displayFinalPalette();
             };
             img.src = capturedImage;
+        }
+
+        async function addLogoToCanvas(ctx, canvasWidth, canvasHeight) {
+            try {
+                const logo = new Image();
+                logo.crossOrigin = 'anonymous'; // Handle CORS if needed
+                
+                return new Promise((resolve, reject) => {
+                    logo.onload = function() {
+                        // Calculate logo size (scale to be roughly 16% of canvas width, maintaining aspect ratio)
+                        const maxLogoWidth = Math.floor(canvasWidth * 0.16);
+                        const logoAspectRatio = logo.width / logo.height;
+                        const logoWidth = Math.min(maxLogoWidth, logo.width);
+                        const logoHeight = logoWidth / logoAspectRatio;
+                        
+                        // Position in bottom right corner with some padding
+                        const padding = Math.floor(canvasWidth * 0.02); // 2% padding
+                        const logoX = canvasWidth - logoWidth - padding;
+                        const logoY = canvasHeight - logoHeight - padding;
+                        
+                        // Save the current context state
+                        ctx.save();
+                        
+                        // Enable high-quality image rendering for smooth edges
+                        ctx.imageSmoothingEnabled = true;
+                        ctx.imageSmoothingQuality = 'high';
+                        
+                        // Add diffused shadow under the logo
+                        ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+                        ctx.shadowBlur = Math.floor(logoWidth * 0.05); // Shadow blur relative to logo size
+                        ctx.shadowOffsetX = Math.floor(logoWidth * 0.01);
+                        ctx.shadowOffsetY = Math.floor(logoWidth * 0.01);
+                        
+                        // Draw the logo with shadow and smooth scaling
+                        ctx.drawImage(logo, logoX, logoY, logoWidth, logoHeight);
+                        
+                        // Restore the context state to remove shadow effects
+                        ctx.restore();
+                        
+                        console.log(`Logo added: ${logoWidth}x${logoHeight} at (${logoX}, ${logoY})`);
+                        resolve();
+                    };
+                    
+                    logo.onerror = function() {
+                        console.warn('Failed to load logo, continuing without it');
+                        resolve(); // Continue even if logo fails to load
+                    };
+                    
+                    // Use the correct path based on getBasePath()
+                    logo.src = getBasePath() + 'swatchme_logo_white.png';
+                });
+            } catch (error) {
+                console.warn('Error adding logo:', error);
+                // Continue without logo if there's an error
+            }
         }
 
         function blurMask(ctx, width, height) {
@@ -1188,8 +1246,8 @@
                 max-width: 90%;
             `;
             instructions.innerHTML = `
-                <h3>Save Your Portrait</h3>
-                <p><strong>Long press</strong> the image below and select <strong>"Add to Photos"</strong> or <strong>"Save to Photos"</strong></p>
+                <h3>Share or Save Your Portrait</h3>
+                <p><strong>Long press</strong> the image below and select <strong>"Save/Add to Photos"</strong> or <strong>"Share..."</strong></p>
                 <p style="font-size: 14px; opacity: 0.8;">Tap anywhere outside the image to close</p>
             `;
             
