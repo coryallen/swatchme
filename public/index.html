@@ -5,18 +5,43 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>SWATCH ME</title>
     <!-- <link rel="stylesheet" href="./styles.css"> -->
-     <script>
+     
+     <!-- Get base path of URL -->
+    <script>
     function getBasePath() {
         const path = window.location.pathname;
+        const hostname = window.location.hostname;
         
-        // Updated for 'swatchme' folder
-        if (path === '/swatchme' || path.startsWith('/swatchme/')) {
+        // Debug logging
+        console.log('Current pathname:', path);
+        console.log('Location origin:', window.location.origin);
+        console.log('Full URL:', window.location.href);
+        console.log('Hostname:', hostname);
+        
+        // For CloudFront domain
+        if (hostname === 'coryallen.ninja' && (path === '/swatchme' || path.startsWith('/swatchme/'))) {
+            console.log('Using CloudFront path: /swatchme/');
             return '/swatchme/';
         }
         
+        console.log('Using local path: ./');
         return './';
     }
+    
+    // Load CSS dynamically
+    function loadCSS(filename) {
+        const basePath = getBasePath();
+        const link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = basePath + filename;
+        console.log('Loading CSS from:', link.href);
+        document.head.appendChild(link);
+    }
+    
+    // Load your CSS
+    loadCSS('styles.css');
 </script>
+
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
