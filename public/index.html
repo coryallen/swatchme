@@ -6,32 +6,17 @@
     <title>SWATCH ME</title>
     <!-- <link rel="stylesheet" href="./styles.css"> -->
      <script>
-        // Detect if we're in a subdirectory deployment
-        function getBasePath() {
-            const path = window.location.pathname;
-            
-            // If accessing via subdirectory without trailing slash, add the base path
-            if (path === '/selfieswatch' || path.startsWith('/selfieswatch/')) {
-                return '/selfieswatch/';
-            }
-            
-            // For local development or root deployment
-            return './';
+    function getBasePath() {
+        const path = window.location.pathname;
+        
+        // Updated for 'swatchme' folder
+        if (path === '/swatchme' || path.startsWith('/swatchme/')) {
+            return '/swatchme/';
         }
         
-        // Function to load CSS with correct path
-        function loadCSS(filename) {
-            const link = document.createElement('link');
-            link.rel = 'stylesheet';
-            link.href = getBasePath() + filename;
-            document.head.appendChild(link);
-        }
-        
-        // Load your CSS files
-        loadCSS('styles.css');
-        // Add more CSS files as needed
-        // loadCSS('another-style.css');
-    </script>
+        return './';
+    }
+</script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
@@ -707,7 +692,7 @@
                         ctx.imageSmoothingQuality = 'high';
                         
                         // Add diffused shadow under the logo
-                        ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+                        ctx.shadowColor = 'rgba(0, 0, 0, 0.6)';
                         ctx.shadowBlur = Math.floor(logoWidth * 0.05); // Shadow blur relative to logo size
                         ctx.shadowOffsetX = Math.floor(logoWidth * 0.01);
                         ctx.shadowOffsetY = Math.floor(logoWidth * 0.01);
