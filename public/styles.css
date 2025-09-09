@@ -198,6 +198,21 @@ button:disabled {
     margin-bottom: 0;
 }
 
+/* Hyperlink styling */
+.instructions a {
+    color: rgba(255, 255, 255, 0.95);
+    text-decoration: underline;
+    text-decoration-color: rgba(255, 255, 255, 0.6);
+    text-underline-offset: 2px;
+    transition: all 0.3s ease;
+}
+
+.instructions a:hover {
+    color: white;
+    text-decoration-color: white;
+    text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+}
+
 .countdown {
     position: absolute;
     top: 50%;
