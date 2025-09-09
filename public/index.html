@@ -213,10 +213,20 @@
             const video = document.getElementById('video');
             const crosshair = document.getElementById('crosshair');
             let isCapturing = false;
+            let lastClickTime = 0;
+            const debounceDelay = 500; // 500ms debounce
             
             video.addEventListener('click', (e) => {
+                const currentTime = Date.now();
+                
+                // Debounce: ignore clicks that are too close together
+                if (currentTime - lastClickTime < debounceDelay) {
+                    return;
+                }
+                
                 if (currentSampleIndex >= 5 || isCapturing) return;
                 
+                lastClickTime = currentTime;
                 isCapturing = true;
                 
                 const rect = video.getBoundingClientRect();
@@ -237,7 +247,10 @@
                 
                 // Capture color at clicked position
                 captureColorAtPosition(video, videoX, videoY, () => {
-                    isCapturing = false;
+                    // Add a small delay before allowing next capture
+                    setTimeout(() => {
+                        isCapturing = false;
+                    }, 100);
                 });
             });
         }
@@ -342,9 +355,15 @@
             const display = document.getElementById('countdown-display');
             
             const countInterval = setInterval(() => {
-                display.textContent = count;
+                if (count > 0) {
+                    display.textContent = count;
+                    display.classList.remove('text-mode');
+                } else {
+                    display.textContent = 'and...';
+                    display.classList.add('text-mode');
+                }
                 
-                if (count <= 0) {
+                if (count < 0) {
                     clearInterval(countInterval);
                     capturePhoto();
                 } else {

@@ -215,6 +215,14 @@ button:disabled {
     pointer-events: none;
     font-family: 'Poppins', sans-serif;
     letter-spacing: 0.1em;
+    white-space: nowrap;
+    text-align: center;
+    min-width: 200px;
+}
+
+/* Adjust font size when displaying "and..." */
+.countdown.text-mode {
+    font-size: 4em;
 }
 
 @keyframes countdownPulse {
