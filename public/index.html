@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Selfie Swatch</title>
+    <title>Swatch Me</title>
     <!-- <link rel="stylesheet" href="./styles.css"> -->
      <script>
         // Detect if we're in a subdirectory deployment
@@ -39,12 +39,12 @@
 </head>
 <body>
     <div class="container">
-        <h1>Selfie Swatch</h1>
+        <h1>Swatch Me</h1>
         
         <!-- Step 1: Welcome -->
         <div class="step active" id="welcome-step">
             <div class="instructions">
-                <h2>Welcome to Selfie Swatch!</h2>
+                <h2>Welcome to Swatch Me!</h2>
                 <p>This app will guide you through capturing 5 color samples from your head and body, then create a beautiful portrait with a custom tiled background made from the colors which make up you!</p>
                 <p>Make sure you're in good lighting and your webcam is working.</p>
                 <p style="font-size: 11px; opacity: 0.8; margin-top: 15px;">Created by <a href="http://heymilkman.com">Cory Allen</a> and <a href="https://www.instagram.com/dannavision/">Danna Feintuch</a><br>
@@ -59,7 +59,7 @@
         <div class="step" id="sampling-step">
             <div class="instructions">
                 <h2>Color Sampling (Step <span id="current-sample">1</span>/5)</h2>
-                <p>Click on different areas of your head and body in the video to collect color samples. Try to get a variety of skin tones, hair colors, and clothing colors.</p>
+                <p>Click on different areas of your head and body in the video to collect color samples. Try to get a variety of skin tones, hair colors, and clothing colors. Once you have picked all of your colors, scroll down and click the button to start the countdown, then strike a pose!</p>
             </div>
             
             <div class="progress-bar">
@@ -92,7 +92,7 @@
                 <button id="clear-btn" onclick="clearAllSamples()" disabled class="control-btn">CLEAR ALL</button>
             </div>
             
-            <button id="next-btn" onclick="startCountdown()" disabled>Start 3-Second Countdown!</button>
+            <button id="next-btn" onclick="startCountdown()" disabled>Start Countdown and Pose!</button>
         </div>
 
         <!-- Step 3: Countdown -->
@@ -110,7 +110,7 @@
         <!-- Step 5: Final Result -->
         <div class="step" id="result-step">
             <div class="instructions">
-                <h2>Your Selfie Swatch!</h2>
+                <h2>Your Swatch Me!</h2>
                 <p>Here's your photo with the background replaced by a beautiful pattern of your colors!</p>
             </div>
             
@@ -417,6 +417,10 @@
         
         async function startExperience() {
             console.log('startExperience called'); // Debug log
+            
+            // Add class to reduce title size
+            document.querySelector('.container').classList.add('experience-started');
+            
             try {
                 console.log('Enumerating available cameras...'); // Debug log
                 await enumerateCameras();
@@ -1251,6 +1255,9 @@
         }
 
         function restartExperience() {
+            // Remove the experience-started class to restore original title size
+            document.querySelector('.container').classList.remove('experience-started');
+            
             // Reset all variables
             colorSamples = [];
             currentSampleIndex = 0;
