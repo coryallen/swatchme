@@ -90,7 +90,7 @@ video {
     .instructions {
         position: relative;
         z-index: 10;
-        background: rgba(0, 0, 0, 0.75);
+        background: rgba(0, 0, 0, 0.4);
         backdrop-filter: blur(15px);
         margin: 10px 0;
         padding: 20px;
@@ -166,7 +166,7 @@ button:disabled {
 }
 
 .instructions {
-    background: rgba(0, 0, 0, 0.6);
+    background: rgba(0, 0, 0, 0.3);
     padding: 25px;
     border-radius: 15px;
     margin: 20px 0;
