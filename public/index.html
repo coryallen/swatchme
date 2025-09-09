@@ -77,6 +77,11 @@
                 <div class="color-sample" id="sample-4"></div>
             </div>
             
+            <div class="palette-controls">
+                <button id="undo-btn" onclick="undoLastSample()" disabled class="control-btn">UNDO LAST</button>
+                <button id="clear-btn" onclick="clearAllSamples()" disabled class="control-btn">CLEAR ALL</button>
+            </div>
+            
             <button id="next-btn" onclick="startCountdown()" disabled>Start 3-Second Countdown!</button>
         </div>
 
@@ -272,16 +277,62 @@
             currentSampleIndex++;
             document.getElementById('current-sample').textContent = Math.min(currentSampleIndex + 1, 5);
             
+            // Update progress bar and UI state
+            updateSamplingUI();
+            
+            // Call callback to reset capturing flag
+            if (callback) callback();
+        }
+
+        function updateSamplingUI() {
             // Update progress bar
             const progress = (currentSampleIndex / 5) * 100;
             document.getElementById('progress-fill').style.width = progress + '%';
             
-            if (currentSampleIndex >= 5) {
-                document.getElementById('next-btn').disabled = false;
+            // Update current sample counter
+            document.getElementById('current-sample').textContent = Math.min(currentSampleIndex + 1, 5);
+            
+            // Enable/disable buttons based on sample count
+            const undoBtn = document.getElementById('undo-btn');
+            const clearBtn = document.getElementById('clear-btn');
+            const nextBtn = document.getElementById('next-btn');
+            
+            undoBtn.disabled = currentSampleIndex === 0;
+            clearBtn.disabled = currentSampleIndex === 0;
+            nextBtn.disabled = currentSampleIndex < 5;
+        }
+        
+        function undoLastSample() {
+            if (currentSampleIndex <= 0) return;
+            
+            currentSampleIndex--;
+            colorSamples.pop();
+            
+            // Clear the last sample visually
+            const sampleElement = document.getElementById(`sample-${currentSampleIndex}`);
+            sampleElement.style.backgroundColor = '';
+            sampleElement.classList.remove('collected');
+            
+            // Update UI
+            updateSamplingUI();
+        }
+        
+        function clearAllSamples() {
+            if (currentSampleIndex <= 0) return;
+            
+            // Reset variables
+            currentSampleIndex = 0;
+            colorSamples = [];
+            
+            // Clear all samples visually
+            for (let i = 0; i < 5; i++) {
+                const sampleElement = document.getElementById(`sample-${i}`);
+                sampleElement.style.backgroundColor = '';
+                sampleElement.classList.remove('collected');
             }
             
-            // Call callback to reset capturing flag
-            if (callback) callback();
+            // Update UI
+            updateSamplingUI();
         }
 
         function startCountdown() {
@@ -931,10 +982,8 @@
             segmentationMask = null;
             // Note: selfieSegmentation and isSegmentationReady remain initialized
             
-            // Reset UI
-            document.getElementById('progress-fill').style.width = '0%';
-            document.getElementById('current-sample').textContent = '1';
-            document.getElementById('next-btn').disabled = true;
+            // Reset UI using the centralized function
+            updateSamplingUI();
             
             // Clear color samples
             for (let i = 0; i < 5; i++) {
