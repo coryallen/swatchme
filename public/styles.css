@@ -4,15 +4,17 @@
     box-sizing: border-box;
 }
 
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap');
+
 body {
-    font-family: 'Arial', sans-serif;
+    font-family: 'Poppins', 'Arial', sans-serif;
     background: linear-gradient(135deg, 
-        #d4a4d4 0%, 
-        #dab4a4 20%, 
-        #e4c4a4 40%, 
-        #e4e4a4 60%, 
-        #c4e4a4 80%, 
-        #a4d4e4 100%);
+        #e066e0 0%, 
+        #e8996b 20%, 
+        #f0c766 40%, 
+        #f0f066 60%, 
+        #9bf066 80%, 
+        #66c9f0 100%);
     min-height: 100vh;
     display: flex;
     align-items: center;
@@ -27,11 +29,13 @@ body {
 }
 
 h1 {
-    font-size: 2.5em;
+    font-size: 2.8em;
     margin-bottom: 20px;
     color: white;
     text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
-    font-weight: bold;
+    font-weight: 800;
+    font-family: 'Poppins', sans-serif;
+    letter-spacing: -0.02em;
 }
 
 .step {
@@ -86,10 +90,11 @@ video {
     .instructions {
         position: relative;
         z-index: 10;
-        background: rgba(255,255,255,0.15);
+        background: rgba(0, 0, 0, 0.75);
         backdrop-filter: blur(15px);
         margin: 10px 0;
-        padding: 15px;
+        padding: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.3);
     }
     
     .countdown {
@@ -134,18 +139,20 @@ video {
 }
 
 button {
-    background: linear-gradient(45deg, #b4749c, #c4946c, #d4b46c, #d4d46c, #a4c46c, #6ca4c4);
+    background: linear-gradient(45deg, #c44db3, #d98a4d, #e6c34d, #e6e64d, #7de64d, #4db3d9);
     color: white;
     border: none;
     padding: 15px 30px;
     font-size: 18px;
-    font-weight: bold;
+    font-weight: 600;
+    font-family: 'Poppins', sans-serif;
     border-radius: 25px;
     cursor: pointer;
     box-shadow: 0 5px 15px rgba(0,0,0,0.3);
     transition: transform 0.3s ease, box-shadow 0.3s ease;
     margin: 10px;
     text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+    letter-spacing: 0.02em;
 }
 
 button:hover:not(:disabled) {
@@ -159,31 +166,72 @@ button:disabled {
 }
 
 .instructions {
-    background: rgba(255,255,255,0.15);
-    padding: 20px;
+    background: rgba(0, 0, 0, 0.6);
+    padding: 25px;
     border-radius: 15px;
     margin: 20px 0;
-    backdrop-filter: blur(5px);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
 }
 
 .instructions h2 {
     color: white;
     margin-bottom: 15px;
-    font-weight: bold;
+    font-weight: 700;
+    font-family: 'Poppins', sans-serif;
+    font-size: 1.4em;
     text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+    letter-spacing: -0.01em;
+}
+
+.instructions p {
+    color: rgba(255, 255, 255, 0.95);
+    font-size: 16px;
+    line-height: 1.6;
+    font-weight: 400;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.7);
+    margin-bottom: 12px;
+}
+
+.instructions p:last-child {
+    margin-bottom: 0;
 }
 
 .countdown {
-    font-size: 4em;
-    font-weight: bold;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 8em;
+    font-weight: 900;
     color: white;
-    animation: pulse 1s infinite;
-    text-shadow: 3px 3px 6px rgba(0,0,0,0.7);
+    animation: countdownPulse 1s infinite;
+    text-shadow: 
+        0 0 20px rgba(0,0,0,0.8),
+        0 0 40px rgba(0,0,0,0.6),
+        3px 3px 0px rgba(0,0,0,0.9);
+    z-index: 15;
+    pointer-events: none;
+    font-family: 'Poppins', sans-serif;
+    letter-spacing: 0.1em;
 }
 
-@keyframes pulse {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.1); }
+@keyframes countdownPulse {
+    0%, 100% { 
+        transform: translate(-50%, -50%) scale(1);
+        text-shadow: 
+            0 0 20px rgba(0,0,0,0.8),
+            0 0 40px rgba(0,0,0,0.6),
+            3px 3px 0px rgba(0,0,0,0.9);
+    }
+    50% { 
+        transform: translate(-50%, -50%) scale(1.2);
+        text-shadow: 
+            0 0 30px rgba(0,0,0,0.9),
+            0 0 60px rgba(0,0,0,0.7),
+            5px 5px 0px rgba(0,0,0,1);
+    }
 }
 
 .crosshair {
@@ -210,6 +258,11 @@ button:disabled {
     display: inline-block;
 }
 
+/* Ensure countdown step has relative positioning for overlay */
+#countdown-step {
+    position: relative;
+}
+
 .final-result {
     margin: 20px 0;
 }
@@ -229,7 +282,7 @@ button:disabled {
 
 .progress-fill {
     height: 100%;
-    background: linear-gradient(90deg, #b4749c, #c4946c, #d4b46c, #d4d46c, #a4c46c, #6ca4c4);
+    background: linear-gradient(90deg, #c44db3, #d98a4d, #e6c34d, #e6e64d, #7de64d, #4db3d9);
     border-radius: 4px;
     transition: width 0.3s ease;
 }
