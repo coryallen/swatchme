@@ -40,6 +40,14 @@
     
     // Load your CSS
     loadCSS('styles.css');
+    
+    // Set logo source when DOM is ready
+    document.addEventListener('DOMContentLoaded', function() {
+        const logo = document.getElementById('logo');
+        if (logo) {
+            logo.src = getBasePath() + 'swatchme_logo_white.png';
+        }
+    });
 </script>
 
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
@@ -49,7 +57,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>SWATCH ME</h1>
+        <img src="" alt="SWATCH ME" class="logo" id="logo">
         
         <!-- Step 1: Welcome -->
         <div class="step active" id="welcome-step">

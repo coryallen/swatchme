@@ -42,33 +42,31 @@ body {
     }
 }
 
-h1 {
-    font-size: 2.8em;
+.logo {
+    max-width: 400px;
+    width: 100%;
+    height: auto;
     margin-bottom: 20px;
-    color: white;
-    text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
-    font-weight: 800;
-    font-family: 'Poppins', sans-serif;
-    letter-spacing: -0.02em;
+    filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.5));
+    transition: all 0.3s ease;
 }
 
 @media (max-width: 768px) {
-    h1 {
-        font-size: 2.2em;
+    .logo {
+        max-width: 300px;
         margin-bottom: 15px;
     }
 }
 
-/* Reduce title size after welcome step */
-.container.experience-started h1 {
-    font-size: 1.8em;
+/* Reduce logo size after welcome step */
+.container.experience-started .logo {
+    max-width: 100px;
     margin-bottom: 10px;
-    transition: font-size 0.3s ease, margin-bottom 0.3s ease;
 }
 
 @media (max-width: 768px) {
-    .container.experience-started h1 {
-        font-size: 1.5em;
+    .container.experience-started .logo {
+        max-width: 75px;
         margin-bottom: 8px;
     }
 }
