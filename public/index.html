@@ -432,6 +432,26 @@
             document.querySelector('.container').classList.add('experience-started');
             
             try {
+                // Check if we already have an active stream
+                if (stream && stream.active) {
+                    console.log('Reusing existing camera stream...'); // Debug log
+                    
+                    // Set up video elements with existing stream
+                    const video = document.getElementById('video');
+                    const countdownVideo = document.getElementById('countdown-video');
+                    
+                    video.srcObject = stream;
+                    countdownVideo.srcObject = stream;
+                    
+                    // Update mirroring based on current camera
+                    updateVideoMirroring();
+                    
+                    console.log('Showing sampling step...'); // Debug log
+                    showStep('sampling-step');
+                    setupColorSampling();
+                    return;
+                }
+                
                 console.log('Enumerating available cameras...'); // Debug log
                 await enumerateCameras();
                 
@@ -657,10 +677,7 @@
             // Store the captured image
             capturedImage = canvas.toDataURL('image/png');
             
-            // Stop the video stream
-            if (stream) {
-                stream.getTracks().forEach(track => track.stop());
-            }
+            // Keep the video stream active for potential restart
             
             // Process the image and show result
             processImageWithBackground();
