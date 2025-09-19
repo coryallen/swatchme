@@ -1,14 +1,29 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-1FPGWWW55B"></script>
+    <!-- Google tag (gtag.js) - Loaded only with consent -->
 <script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
+// GDPR Consent Management
+function loadGoogleAnalytics() {
+  // Load the gtag script
+  const script = document.createElement('script');
+  script.async = true;
+  script.src = 'https://www.googletagmanager.com/gtag/js?id=G-1FPGWWW55B';
+  document.head.appendChild(script);
+  
+  // Initialize gtag after script loads
+  script.onload = function() {
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-1FPGWWW55B');
+  };
+}
 
-  gtag('config', 'G-1FPGWWW55B');
+// Check for existing consent
+if (localStorage.getItem('gdpr-consent') === 'accepted') {
+  loadGoogleAnalytics();
+}
 </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
@@ -59,12 +74,27 @@
     });
 </script>
 
+
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/selfie_segmentation.js" crossorigin="anonymous"></script>
 </head>
 <body>
+    <!-- GDPR Consent Banner -->
+    <div id="consent-banner" class="consent-banner" style="display: none;">
+        <div class="consent-content">
+            <div class="consent-text">
+                <h3>Cookie Notice</h3>
+                <p>We use cookies and analytics to improve your experience on our site. By clicking "Accept", you consent to our use of cookies for analytics purposes. See Privacy Policy for more information.</p>
+            </div>
+            <div class="consent-buttons">
+                <button id="consent-accept" class="consent-btn accept">Accept</button>
+                <button id="consent-decline" class="consent-btn decline">Decline</button>
+            </div>
+        </div>
+    </div>
+
     <div class="container">
         <img src="" alt="SWATCH ME" class="logo" id="logo">
         
@@ -79,6 +109,9 @@
                       This application uses MediaPipe (<a href="https://mediapipe.dev">https://mediapipe.dev</a>) - Copyright 2019 The MediaPipe Authors,<br>
                       Licensed under the Apache License, Version 2.0
                 </p>
+                <div class="privacy-link-container">
+                    <button id="privacy-policy-btn" class="privacy-link">Privacy Policy</button>
+                </div>
             </div>
             <button onclick="startExperience()">Start Experience</button>
         </div>
@@ -178,6 +211,70 @@
     </div>
 
     <canvas id="hidden-canvas" style="display: none;"></canvas>
+    
+    <!-- Privacy Policy Drawer -->
+    <div id="privacy-drawer" class="privacy-drawer">
+        <div class="privacy-drawer-content">
+            <div class="privacy-header">
+                <h2>Privacy Policy</h2>
+                <button id="privacy-close-btn" class="privacy-close-btn">×</button>
+            </div>
+            <div class="privacy-body">
+                <div class="privacy-section">
+                    <h3>Information We Collect</h3>
+                    <p>SWATCH ME is designed with privacy in mind. We collect minimal information to provide you with the best experience:</p>
+                    <ul>
+                        <li><strong>Camera Access:</strong> We access your device's camera solely to capture color samples and take your photo. No images are stored or transmitted to our servers.</li>
+                        <li><strong>Analytics (Optional):</strong> With your consent, we use Google Analytics to understand how visitors interact with our application. This helps us improve the user experience.</li>
+                        <li><strong>Local Storage:</strong> We store your consent preferences locally on your device.</li>
+                    </ul>
+                </div>
+                
+                <div class="privacy-section">
+                    <h3>How We Use Your Information</h3>
+                    <ul>
+                        <li>Camera data is processed locally on your device to create color samples and generate your portrait</li>
+                        <li>All image processing happens in your browser - no photos leave your device</li>
+                        <li>Analytics data (if consented) helps us understand usage patterns to improve the application</li>
+                    </ul>
+                </div>
+                
+                <div class="privacy-section">
+                    <h3>Data Storage and Security</h3>
+                    <ul>
+                        <li>No personal images are stored on our servers</li>
+                        <li>All photo processing occurs locally in your browser</li>
+                        <li>Only anonymized analytics data is collected (if you consent)</li>
+                        <li>Your consent preferences are stored locally on your device</li>
+                    </ul>
+                </div>
+                
+                <div class="privacy-section">
+                    <h3>Third-Party Services</h3>
+                    <p>We use the following third-party services:</p>
+                    <ul>
+                        <li><strong>Google Analytics:</strong> For website analytics (only with your consent)</li>
+                        <li><strong>MediaPipe:</strong> For AI-powered background segmentation (processing occurs locally)</li>
+                    </ul>
+                </div>
+                
+                <div class="privacy-section">
+                    <h3>Your Rights</h3>
+                    <ul>
+                        <li>You can withdraw analytics consent at any time by clearing your browser data</li>
+                        <li>You control camera access through your browser settings</li>
+                        <li>No account registration is required</li>
+                    </ul>
+                </div>
+                
+                <div class="privacy-section">
+                    <h3>Contact</h3>
+                    <p>If you have questions about this privacy policy, please contact us through the creator links provided in the application.</p>
+                    <p><em>Last updated: September 2025</em></p>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <script>
         let stream;
@@ -1461,6 +1558,77 @@
             });
             document.getElementById(stepId).classList.add('active');
         }
+        
+        // GDPR Consent Management
+        function initConsentBanner() {
+            const consentBanner = document.getElementById('consent-banner');
+            const acceptBtn = document.getElementById('consent-accept');
+            const declineBtn = document.getElementById('consent-decline');
+            
+            // Check if user has already made a choice
+            const consentStatus = localStorage.getItem('gdpr-consent');
+            
+            if (!consentStatus) {
+                // Show banner if no previous choice
+                consentBanner.style.display = 'block';
+            }
+            
+            // Handle accept button
+            acceptBtn.addEventListener('click', function() {
+                localStorage.setItem('gdpr-consent', 'accepted');
+                consentBanner.style.display = 'none';
+                // Load Google Analytics
+                loadGoogleAnalytics();
+            });
+            
+            // Handle decline button
+            declineBtn.addEventListener('click', function() {
+                localStorage.setItem('gdpr-consent', 'declined');
+                consentBanner.style.display = 'none';
+                // Do not load Google Analytics
+            });
+        }
+        
+        // Initialize consent banner when page loads
+        document.addEventListener('DOMContentLoaded', initConsentBanner);
+        
+        // Privacy Policy Drawer Functions
+        function initPrivacyDrawer() {
+            const privacyBtn = document.getElementById('privacy-policy-btn');
+            const privacyDrawer = document.getElementById('privacy-drawer');
+            const privacyCloseBtn = document.getElementById('privacy-close-btn');
+            
+            // Open drawer
+            privacyBtn.addEventListener('click', function() {
+                privacyDrawer.classList.add('open');
+                document.body.style.overflow = 'hidden'; // Prevent background scroll
+            });
+            
+            // Close drawer
+            privacyCloseBtn.addEventListener('click', function() {
+                privacyDrawer.classList.remove('open');
+                document.body.style.overflow = ''; // Restore scroll
+            });
+            
+            // Close drawer when clicking outside content
+            privacyDrawer.addEventListener('click', function(e) {
+                if (e.target === privacyDrawer) {
+                    privacyDrawer.classList.remove('open');
+                    document.body.style.overflow = ''; // Restore scroll
+                }
+            });
+            
+            // Close drawer with escape key
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && privacyDrawer.classList.contains('open')) {
+                    privacyDrawer.classList.remove('open');
+                    document.body.style.overflow = ''; // Restore scroll
+                }
+            });
+        }
+        
+        // Initialize privacy drawer when page loads
+        document.addEventListener('DOMContentLoaded', initPrivacyDrawer);
     </script>
 </body>
 </html>
