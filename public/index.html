@@ -32,32 +32,12 @@ if (localStorage.getItem('gdpr-consent') === 'accepted') {
      
      <!-- Get base path of URL -->
     <script>
-    function getBasePath() {
-        const path = window.location.pathname;
-        const hostname = window.location.hostname;
-        
-        // Debug logging
-        console.log('Current pathname:', path);
-        console.log('Location origin:', window.location.origin);
-        console.log('Full URL:', window.location.href);
-        console.log('Hostname:', hostname);
-        
-        // For CloudFront domain
-        if (hostname === 'coryallen.ninja' && (path === '/swatchme' || path.startsWith('/swatchme/'))) {
-            console.log('Using CloudFront path: /swatchme/');
-            return '/swatchme/';
-        }
-        
-        console.log('Using local path: ./');
-        return './';
-    }
     
     // Load CSS dynamically
     function loadCSS(filename) {
-        const basePath = getBasePath();
         const link = document.createElement('link');
         link.rel = 'stylesheet';
-        link.href = basePath + filename;
+        link.href = './' + filename;
         console.log('Loading CSS from:', link.href);
         document.head.appendChild(link);
     }
@@ -69,7 +49,7 @@ if (localStorage.getItem('gdpr-consent') === 'accepted') {
     document.addEventListener('DOMContentLoaded', function() {
         const logo = document.getElementById('logo');
         if (logo) {
-            logo.src = getBasePath() + 'swatchme_logo_white.png';
+            logo.src = './swatchme_logo_white.png';
         }
     });
 </script>
@@ -867,8 +847,7 @@ if (localStorage.getItem('gdpr-consent') === 'accepted') {
                         resolve(); // Continue even if logo fails to load
                     };
                     
-                    // Use the correct path based on getBasePath()
-                    logo.src = getBasePath() + 'swatchme_logo_white.png';
+                    logo.src = './swatchme_logo_white.png';
                 });
             } catch (error) {
                 console.warn('Error adding logo:', error);
