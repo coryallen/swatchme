@@ -53,36 +53,59 @@ body {
 
 @media (max-width: 768px) {
     .logo {
-        max-width: 300px;
+        max-width: 150px;
         margin-bottom: 15px;
     }
 }
 
-/* Reduce logo size after welcome step */
+/* Animate logo transition when experience starts */
 .container.experience-started .logo {
     max-width: 100px;
     margin-bottom: 10px;
+    transition: all 0.6s ease-in-out;
 }
 
 @media (max-width: 768px) {
     .container.experience-started .logo {
-        max-width: 75px;
-        margin-bottom: 8px;
+        opacity: 0;
+        transform: translateY(-20px) scale(0.8);
+        max-height: 0;
+        margin-bottom: 0;
+        transition: all 0.6s ease-in-out;
+    }
+}
+
+/* Animate content positioning */
+.container {
+    transition: all 0.6s ease-in-out;
+}
+
+.step {
+    transition: all 0.6s ease-in-out;
+}
+
+/* Smooth step transitions */
+.step.active {
+    animation: slideInUp 0.6s ease-out;
+}
+
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
     }
 }
 
 .step {
     display: none;
-    animation: fadeIn 0.5s ease-in;
 }
 
 .step.active {
     display: block;
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
 }
 
 
@@ -114,22 +137,74 @@ video.mirror-back {
     -webkit-transform: scaleX(1) !important;
 }
 
+/* Square aspect ratio for sampling and review videos */
+.video-container {
+    position: relative;
+    width: 100%;
+    max-width: 400px;
+    margin: 0 auto;
+    aspect-ratio: 1 / 1;
+    overflow: hidden;
+    border-radius: 15px;
+}
+
+.video-container video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Camera loading state */
+.camera-loading {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(10px);
+    border-radius: 15px;
+    color: white;
+    transition: opacity 0.3s ease;
+}
+
+.loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid rgba(255, 255, 255, 0.3);
+    border-top: 4px solid white;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 15px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.camera-loading p {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 500;
+}
+
 /* Mobile-specific video constraints */
 @media (max-width: 768px) {
+    .video-container {
+        max-width: 300px;
+    }
+
     video {
         max-width: 90vw;
         max-height: 50vh;
         object-fit: cover;
         position: relative;
         z-index: 1;
-    }
-    
-    .video-container {
-        position: relative;
-        overflow: hidden;
-        border-radius: 15px;
-        max-width: 90vw;
-        margin: 0 auto;
     }
     
     /* Ensure instructions stay visible */
@@ -197,6 +272,95 @@ video.mirror-back {
 .color-sample.collected {
     border-color: #4CAF50;
     border-width: 4px;
+}
+
+/* GDPR Consent Banner */
+.consent-banner {
+    display: none;
+}
+
+/* Attribution text */
+.attribution {
+    font-size: 11px;
+    opacity: 0.8;
+    margin-top: 15px;
+}
+
+/* Camera selection */
+.camera-selection {
+    display: none;
+}
+
+/* Debug display */
+#debug-display {
+    display: none;
+    margin-top: 10px;
+    padding: 5px;
+    background: rgba(0,0,0,0.3);
+    border-radius: 5px;
+    font-size: 12px;
+    color: white;
+}
+
+/* Debug panel */
+.debug-panel {
+    display: none;
+    background: rgba(255,255,255,0.1);
+    padding: 20px;
+    border-radius: 15px;
+    margin: 20px 0;
+    backdrop-filter: blur(10px);
+}
+
+.debug-panel h3 {
+    color: white;
+    margin-bottom: 15px;
+}
+
+.debug-images {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 20px;
+}
+
+.debug-item {
+    text-align: center;
+}
+
+.debug-item h4 {
+    margin-bottom: 10px;
+    font-size: 14px;
+    color: white;
+}
+
+.debug-item canvas {
+    border: 2px solid white;
+    border-radius: 8px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+}
+
+/* Hidden canvas */
+#hidden-canvas {
+    display: none;
+}
+
+/* Mobile image modal text */
+.modal-close-instruction {
+    font-size: 14px;
+    opacity: 0.8;
+}
+
+/* Review step - smaller video (inherits square aspect ratio from .video-container) */
+.review-video {
+    max-width: 320px;
+}
+
+@media (max-width: 768px) {
+    .review-video {
+        max-width: 250px;
+    }
 }
 
 button {
@@ -422,21 +586,47 @@ button:disabled {
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
-    gap: 10px;
+    gap: 15px;
     margin-bottom: 15px;
+}
+
+.main-buttons button {
+    flex: 0 1 auto;
+    white-space: nowrap;
+    min-width: 0;
 }
 
 @media (max-width: 768px) {
     .main-buttons {
-        gap: 8px;
+        gap: 10px;
         margin-bottom: 10px;
+        flex-direction: row;
+    }
+
+    .main-buttons button {
+        padding: 10px 16px;
+        font-size: 14px;
+        flex: 1 1 auto;
+        max-width: 45%;
     }
 }
 
-.debug-button-container {
+.debug-link-container {
     display: flex;
     justify-content: center;
-    margin-top: 10px;
+    margin-top: 15px;
+}
+
+.debug-link {
+    color: rgba(255, 255, 255, 0.6);
+    text-decoration: none;
+    font-size: 12px;
+    transition: color 0.3s ease;
+}
+
+.debug-link:hover {
+    color: rgba(255, 255, 255, 0.8);
+    text-decoration: underline;
 }
 
 .debug-button {
@@ -503,37 +693,6 @@ button:disabled {
     }
 }
 
-.control-btn {
-    background: rgba(0, 0, 0, 0.6) !important;
-    color: white !important;
-    border: 2px solid rgba(255, 255, 255, 0.8) !important;
-    padding: 10px 20px !important;
-    font-size: 15px !important;
-    border-radius: 25px !important;
-    cursor: pointer !important;
-    transition: all 0.3s ease !important;
-    backdrop-filter: blur(10px) !important;
-    box-shadow: 0 3px 10px rgba(0,0,0,0.4) !important;
-    font-weight: bold !important;
-    text-shadow: 1px 1px 2px rgba(0,0,0,0.8) !important;
-    letter-spacing: 0.5px !important;
-}
-
-.control-btn:hover:not(:disabled) {
-    background: rgba(0, 0, 0, 0.8) !important;
-    border-color: white !important;
-    transform: translateY(-2px) !important;
-    box-shadow: 0 6px 16px rgba(0,0,0,0.5) !important;
-    text-shadow: 1px 1px 3px rgba(0,0,0,1) !important;
-}
-
-.control-btn:disabled {
-    opacity: 0.3 !important;
-    cursor: not-allowed !important;
-    transform: none !important;
-    background: rgba(0, 0, 0, 0.3) !important;
-    border-color: rgba(255, 255, 255, 0.3) !important;
-}
 
 /* Camera Selection Dropdown */
 .camera-selection {

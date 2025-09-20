@@ -62,15 +62,15 @@ if (localStorage.getItem('gdpr-consent') === 'accepted') {
 </head>
 <body>
     <!-- GDPR Consent Banner -->
-    <div id="consent-banner" class="consent-banner" style="display: none;">
+    <div id="consent-banner" class="consent-banner">
         <div class="consent-content">
             <div class="consent-text">
                 <h3>Cookie Notice</h3>
                 <p>We use cookies and analytics to improve your experience on our site. By clicking "Accept", you consent to our use of cookies for analytics purposes. See Privacy Policy for more information.</p>
             </div>
             <div class="consent-buttons">
-                <button id="consent-accept" class="consent-btn accept">Accept</button>
-                <button id="consent-decline" class="consent-btn decline">Decline</button>
+                <button id="consent-accept" class="consent-btn accept">ACCEPT</button>
+                <button id="consent-decline" class="consent-btn decline">DECLINE</button>
             </div>
         </div>
     </div>
@@ -82,39 +82,40 @@ if (localStorage.getItem('gdpr-consent') === 'accepted') {
         <div class="step active" id="welcome-step">
             <div class="instructions">
                 <h2>Welcome to SWATCH ME!</h2>
-                <p>This app will guide you through capturing 5 color samples from your head and body, then create a beautiful portrait with a custom tiled background made from the colors which make up you!</p>
-                <p>Make sure you're in good lighting and your webcam is working.</p>
-                <p style="font-size: 11px; opacity: 0.8; margin-top: 15px;">Created by <a href="http://heymilkman.com">Cory Allen</a> and <a href="https://www.instagram.com/dannavision/">Danna Feintuch</a><br>
+                <p>Create a unique portrait using colors from yourself! We'll help you sample 5 colors from your appearance, then generate a stunning photo with a custom background made from your personal palette.</p>
+                <p>Make sure you have good lighting and camera access.</p>
+                <p class="attribution">Created by <a href="http://heymilkman.com">Cory Allen</a> and <a href="https://www.instagram.com/dannavision/">Danna Feintuch</a><br>
                     🤖 Generated with <a href="https://claude.ai/code">https://claude.ai/code</a><br>
                       This application uses MediaPipe (<a href="https://mediapipe.dev">https://mediapipe.dev</a>) - Copyright 2019 The MediaPipe Authors,<br>
                       Licensed under the Apache License, Version 2.0<br>
                       <a href="#" id="privacy-policy-btn" class="privacy-link">Privacy Policy</a>
                 </p>
             </div>
-            <button onclick="startExperience()">Start Experience</button>
+            <button onclick="startExperience()">START EXPERIENCE</button>
         </div>
 
         <!-- Step 2: Color Sampling -->
         <div class="step" id="sampling-step">
             <div class="instructions">
                 <h2>Color Sampling (Step <span id="current-sample">1</span>/5)</h2>
-                <p>Click on different areas of your head and body in the video to collect color samples. Try to get a variety of skin tones, hair colors, and clothing colors. Once you have picked all of your colors, scroll down and click the button to start the countdown, then strike a pose!</p>
+                <p>Tap anywhere on the video to sample colors from yourself. Collect 5 different colors - try skin tones, hair, clothing, or accessories for the best results.</p>
             </div>
             
-            <div class="progress-bar">
-                <div class="progress-fill" id="progress-fill"></div>
-            </div>
             
-            <div class="camera-selection" id="camera-selection" style="display: none;">
+            <div class="camera-selection" id="camera-selection">
                 <label for="camera-select">Camera:</label>
                 <select id="camera-select"></select>
-                <div id="debug-display" style="display: none; margin-top: 10px; padding: 5px; background: rgba(0,0,0,0.3); border-radius: 5px; font-size: 12px; color: white;">
+                <div id="debug-display">
                     Camera Status: <span id="camera-status">Loading...</span>
                 </div>
             </div>
             
             <div class="video-container">
-                <video id="video" width="640" height="480" autoplay playsinline muted></video>
+                <video id="video" width="640" height="480" autoplay playsinline muted style="display: none;"></video>
+                <div class="camera-loading" id="camera-loading">
+                    <div class="loading-spinner"></div>
+                    <p>Setting up camera...</p>
+                </div>
                 <div class="crosshair" id="crosshair"></div>
             </div>
             
@@ -127,14 +128,40 @@ if (localStorage.getItem('gdpr-consent') === 'accepted') {
             </div>
             
             <div class="palette-controls">
-                <button id="undo-btn" onclick="undoLastSample()" disabled class="control-btn">UNDO LAST</button>
-                <button id="clear-btn" onclick="clearAllSamples()" disabled class="control-btn">CLEAR ALL</button>
+                <button id="undo-btn" onclick="undoLastSample()" disabled>UNDO LAST</button>
+                <button id="clear-btn" onclick="clearAllSamples()" disabled>CLEAR ALL</button>
             </div>
             
-            <button id="next-btn" onclick="startCountdown()" disabled>Start Countdown and Pose!</button>
         </div>
 
-        <!-- Step 3: Countdown -->
+        <!-- Step 3: Color Review -->
+        <div class="step" id="review-step">
+            <div class="instructions">
+                <h2>Review Your Colors</h2>
+                <p>Perfect! These are your 5 colors. Ready to take your photo? Or tap UNDO/CLEAR to adjust your color selection.</p>
+            </div>
+
+            <div class="video-container review-video">
+                <video id="review-video" width="640" height="480" autoplay playsinline muted></video>
+            </div>
+
+            <div class="color-palette" id="review-palette">
+                <div class="color-sample" id="review-sample-0"></div>
+                <div class="color-sample" id="review-sample-1"></div>
+                <div class="color-sample" id="review-sample-2"></div>
+                <div class="color-sample" id="review-sample-3"></div>
+                <div class="color-sample" id="review-sample-4"></div>
+            </div>
+
+            <div class="palette-controls">
+                <button id="review-undo-btn" onclick="undoLastSampleFromReview()">UNDO LAST</button>
+                <button id="review-clear-btn" onclick="clearAllSamplesFromReview()">CLEAR ALL</button>
+            </div>
+
+            <button id="countdown-btn" onclick="startCountdown()">TAKE PICTURE!</button>
+        </div>
+
+        <!-- Step 4: Countdown -->
         <div class="step" id="countdown-step">
             <div class="instructions">
                 <h2>Get Ready!</h2>
@@ -148,47 +175,40 @@ if (localStorage.getItem('gdpr-consent') === 'accepted') {
 
         <!-- Step 5: Final Result -->
         <div class="step" id="result-step">
-            <div class="instructions">
-                <h2>Your SWATCH ME!</h2>
-                <p>Here's your photo with the background replaced by a beautiful pattern of your colors!</p>
-            </div>
-            
             <div class="final-result">
                 <canvas id="result-canvas" class="result-canvas"></canvas>
             </div>
             
-            <div class="color-palette" id="final-palette"></div>
-            
             <div class="main-buttons">
-                <button onclick="downloadImage()">Share/Download Image</button>
-                <button onclick="restartExperience()">Start Over</button>
+                <button onclick="downloadImage()">SHARE/DOWNLOAD</button>
+                <button onclick="restartExperience()">START OVER</button>
             </div>
             
-            <div class="debug-button-container">
-                <button onclick="toggleDebugMode()" id="debug-toggle" class="debug-button">🔍 DEBUG MODE</button>
+            <div class="debug-link-container">
+                <a href="#" onclick="toggleDebugMode(); return false;" id="debug-toggle" class="debug-link">DEBUG MODE</a>
             </div>
 
-<div class="debug-panel" id="debug-panel" style="display: none; background: rgba(255,255,255,0.1); padding: 20px; border-radius: 15px; margin: 20px 0; backdrop-filter: blur(10px);">
-    <h3 style="color: white; margin-bottom: 15px;">Debug Information</h3>
-    <div class="debug-images" style="display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; margin-top: 20px;">
-        <div class="debug-item" style="text-align: center;">
-            <h4 style="margin-bottom: 10px; font-size: 14px; color: white;">Original Webcam Image</h4>
-            <canvas id="debug-original" width="320" height="240" style="border: 2px solid white; border-radius: 8px; box-shadow: 0 5px 15px rgba(0,0,0,0.3);"></canvas>
+<div class="debug-panel" id="debug-panel">
+    <h3>Debug Information</h3>
+    <div class="debug-images">
+        <div class="debug-item">
+            <h4>Original Webcam Image</h4>
+            <canvas id="debug-original" width="320" height="240"></canvas>
         </div>
-        <div class="debug-item" style="text-align: center;">
-            <h4 style="margin-bottom: 10px; font-size: 14px; color: white;">Segmentation Mask</h4>
-            <canvas id="debug-mask" width="320" height="240" style="border: 2px solid white; border-radius: 8px; box-shadow: 0 5px 15px rgba(0,0,0,0.3);"></canvas>
+        <div class="debug-item">
+            <h4>Segmentation Mask</h4>
+            <canvas id="debug-mask" width="320" height="240"></canvas>
         </div>
-        <div class="debug-item" style="text-align: center;">
-            <h4 style="margin-bottom: 10px; font-size: 14px; color: white;">Tiled Background</h4>
-            <canvas id="debug-background" width="320" height="240" style="border: 2px solid white; border-radius: 8px; box-shadow: 0 5px 15px rgba(0,0,0,0.3);"></canvas>
+        <div class="debug-item">
+            <h4>Tiled Background</h4>
+            <canvas id="debug-background" width="320" height="240"></canvas>
         </div>
     </div>
 </div>
         </div>
     </div>
 
-    <canvas id="hidden-canvas" style="display: none;"></canvas>
+    <canvas id="hidden-canvas"></canvas>
     
     <!-- Privacy Policy Drawer -->
     <div id="privacy-drawer" class="privacy-drawer">
@@ -313,46 +333,53 @@ if (localStorage.getItem('gdpr-consent') === 'accepted') {
         function updateVideoMirroring() {
             const video = document.getElementById('video');
             const countdownVideo = document.getElementById('countdown-video');
-            
+            const reviewVideo = document.getElementById('review-video');
+
             console.log('=== updateVideoMirroring START ===');
             console.log('currentCameraFacing:', currentCameraFacing);
             console.log('Video element exists:', !!video);
             console.log('Countdown video element exists:', !!countdownVideo);
-            
-            if (!video || !countdownVideo) {
-                console.error('Video elements not found!');
-                return;
+            console.log('Review video element exists:', !!reviewVideo);
+
+            // Remove existing mirror classes from all videos
+            if (video) {
+                video.classList.remove('mirror-front', 'mirror-back');
             }
-            
-            // Remove existing mirror classes
-            video.classList.remove('mirror-front', 'mirror-back');
-            countdownVideo.classList.remove('mirror-front', 'mirror-back');
+            if (countdownVideo) {
+                countdownVideo.classList.remove('mirror-front', 'mirror-back');
+            }
+            if (reviewVideo) {
+                reviewVideo.classList.remove('mirror-front', 'mirror-back');
+            }
             console.log('Cleared existing mirror classes');
-            
+
             if (currentCameraFacing === 'user') {
                 // Front camera should be mirrored (selfie view)
-                video.classList.add('mirror-front');
-                countdownVideo.classList.add('mirror-front');
+                if (video) video.classList.add('mirror-front');
+                if (countdownVideo) countdownVideo.classList.add('mirror-front');
+                if (reviewVideo) reviewVideo.classList.add('mirror-front');
                 console.log('✅ Applied mirror-front class for FRONT camera');
                 console.log('Expected result: Video should be MIRRORED (scaleX(-1))');
             } else if (currentCameraFacing === 'environment') {
                 // Back camera should not be mirrored (natural view)
-                video.classList.add('mirror-back');
-                countdownVideo.classList.add('mirror-back');
+                if (video) video.classList.add('mirror-back');
+                if (countdownVideo) countdownVideo.classList.add('mirror-back');
+                if (reviewVideo) reviewVideo.classList.add('mirror-back');
                 console.log('✅ Applied mirror-back class for BACK camera');
                 console.log('Expected result: Video should be NORMAL (scaleX(1))');
             } else {
                 console.warn('Unknown camera facing mode:', currentCameraFacing);
             }
-            
-            console.log('Final video classes:', video.className);
-            console.log('Final countdown video classes:', countdownVideo.className);
-            
-            // Check computed styles
-            const computedStyle = window.getComputedStyle(video);
-            console.log('Computed transform style:', computedStyle.transform);
+
+            if (video) {
+                console.log('Final video classes:', video.className);
+
+                // Check computed styles
+                const computedStyle = window.getComputedStyle(video);
+                console.log('Computed transform style:', computedStyle.transform);
+            }
             console.log('=== updateVideoMirroring END ===');
-            
+
             // Update on-screen debug display
             updateDebugDisplay();
         }
@@ -520,10 +547,13 @@ if (localStorage.getItem('gdpr-consent') === 'accepted') {
         
         async function startExperience() {
             console.log('startExperience called'); // Debug log
-            
-            // Add class to reduce title size
+
+            // Add class to reduce title size immediately for smooth transition
             document.querySelector('.container').classList.add('experience-started');
-            
+
+            // Show loading state immediately
+            showStep('sampling-step');
+
             try {
                 // Check if we already have an active stream
                 if (stream && stream.active) {
@@ -532,15 +562,19 @@ if (localStorage.getItem('gdpr-consent') === 'accepted') {
                     // Set up video elements with existing stream
                     const video = document.getElementById('video');
                     const countdownVideo = document.getElementById('countdown-video');
-                    
+                    const loading = document.getElementById('camera-loading');
+
                     video.srcObject = stream;
                     countdownVideo.srcObject = stream;
-                    
+
+                    // Hide loading and show video
+                    loading.style.display = 'none';
+                    video.style.display = 'block';
+
                     // Update mirroring based on current camera
                     updateVideoMirroring();
-                    
+
                     console.log('Showing sampling step...'); // Debug log
-                    showStep('sampling-step');
                     setupColorSampling();
                     return;
                 }
@@ -560,13 +594,20 @@ if (localStorage.getItem('gdpr-consent') === 'accepted') {
                 console.log('Camera access granted, setting up videos...'); // Debug log
                 const video = document.getElementById('video');
                 const countdownVideo = document.getElementById('countdown-video');
-                
+                const loading = document.getElementById('camera-loading');
+
                 video.srcObject = stream;
                 countdownVideo.srcObject = stream;
-                
+
+                // Hide loading and show video when stream is ready
+                video.addEventListener('loadedmetadata', () => {
+                    loading.style.display = 'none';
+                    video.style.display = 'block';
+                }, { once: true });
+
                 // Populate camera dropdown after getting initial stream
                 populateCameraSelect();
-                
+
                 // Set initial mirroring based on first camera
                 const firstCamera = availableCameras[0];
                 if (firstCamera && firstCamera.facingMode) {
@@ -575,9 +616,8 @@ if (localStorage.getItem('gdpr-consent') === 'accepted') {
                     currentCameraFacing = 'user'; // Default to front camera mirroring
                 }
                 updateVideoMirroring();
-                
+
                 console.log('Showing sampling step...'); // Debug log
-                showStep('sampling-step');
                 setupColorSampling();
             } catch (err) {
                 console.error('Error in startExperience:', err); // Enhanced error logging
@@ -676,15 +716,20 @@ if (localStorage.getItem('gdpr-consent') === 'accepted') {
             
             // Update progress bar and UI state
             updateSamplingUI();
-            
+
+            // Auto-advance to review step if all 5 colors are collected
+            if (currentSampleIndex >= 5) {
+                setTimeout(() => {
+                    goToReview();
+                }, 1000); // Small delay to show the final color being added
+            }
+
             // Call callback to reset capturing flag
             if (callback) callback();
         }
 
         function updateSamplingUI() {
-            // Update progress bar
-            const progress = (currentSampleIndex / 5) * 100;
-            document.getElementById('progress-fill').style.width = progress + '%';
+            // Progress bar removed
             
             // Update current sample counter
             document.getElementById('current-sample').textContent = Math.min(currentSampleIndex + 1, 5);
@@ -692,11 +737,9 @@ if (localStorage.getItem('gdpr-consent') === 'accepted') {
             // Enable/disable buttons based on sample count
             const undoBtn = document.getElementById('undo-btn');
             const clearBtn = document.getElementById('clear-btn');
-            const nextBtn = document.getElementById('next-btn');
-            
+
             undoBtn.disabled = currentSampleIndex === 0;
             clearBtn.disabled = currentSampleIndex === 0;
-            nextBtn.disabled = currentSampleIndex < 5;
         }
         
         function undoLastSample() {
@@ -730,6 +773,78 @@ if (localStorage.getItem('gdpr-consent') === 'accepted') {
             
             // Update UI
             updateSamplingUI();
+        }
+
+        function goToReview() {
+            // Set up review video with current stream
+            const reviewVideo = document.getElementById('review-video');
+            reviewVideo.srcObject = stream;
+
+            // Update mirroring for review video
+            reviewVideo.addEventListener('loadedmetadata', () => {
+                updateVideoMirroring();
+            }, { once: true });
+
+            // Copy colors to review palette
+            updateReviewPalette();
+
+            // Show review step
+            showStep('review-step');
+        }
+
+        function updateReviewPalette() {
+            for (let i = 0; i < 5; i++) {
+                const reviewSample = document.getElementById(`review-sample-${i}`);
+                if (i < colorSamples.length) {
+                    reviewSample.style.backgroundColor = colorSamples[i].color;
+                    reviewSample.classList.add('collected');
+                } else {
+                    reviewSample.style.backgroundColor = '';
+                    reviewSample.classList.remove('collected');
+                }
+            }
+        }
+
+        function undoLastSampleFromReview() {
+            if (currentSampleIndex <= 0) return;
+
+            // Remove last sample
+            currentSampleIndex--;
+            colorSamples.pop();
+
+            // Update both sampling and review palettes
+            const sampleElement = document.getElementById(`sample-${currentSampleIndex}`);
+            sampleElement.style.backgroundColor = '';
+            sampleElement.classList.remove('collected');
+
+            updateReviewPalette();
+            updateSamplingUI();
+
+            // If less than 5 colors, go back to sampling
+            if (currentSampleIndex < 5) {
+                showStep('sampling-step');
+            }
+        }
+
+        function clearAllSamplesFromReview() {
+            if (currentSampleIndex <= 0) return;
+
+            // Reset variables
+            currentSampleIndex = 0;
+            colorSamples = [];
+
+            // Clear all samples visually in both palettes
+            for (let i = 0; i < 5; i++) {
+                const sampleElement = document.getElementById(`sample-${i}`);
+                sampleElement.style.backgroundColor = '';
+                sampleElement.classList.remove('collected');
+            }
+
+            updateReviewPalette();
+            updateSamplingUI();
+
+            // Go back to sampling step
+            showStep('sampling-step');
         }
 
         function startCountdown() {
@@ -796,7 +911,6 @@ if (localStorage.getItem('gdpr-consent') === 'accepted') {
                 
                 // Show final result
                 showStep('result-step');
-                displayFinalPalette();
             };
             img.src = capturedImage;
         }
@@ -1303,17 +1417,6 @@ if (localStorage.getItem('gdpr-consent') === 'accepted') {
             ctx.putImageData(fallbackImageData, 0, 0);
         }
 
-        function displayFinalPalette() {
-            const palette = document.getElementById('final-palette');
-            palette.innerHTML = '';
-            
-            colorSamples.forEach((sample, index) => {
-                const sampleDiv = document.createElement('div');
-                sampleDiv.className = 'color-sample collected';
-                sampleDiv.style.backgroundColor = sample.color;
-                palette.appendChild(sampleDiv);
-            });
-        }
 
         function downloadImage() {
             const canvas = document.getElementById('result-canvas');
@@ -1367,7 +1470,7 @@ if (localStorage.getItem('gdpr-consent') === 'accepted') {
             instructions.innerHTML = `
                 <h3>Share or Save Your Portrait</h3>
                 <p><strong>Long press</strong> the image below and select <strong>"Save/Add to Photos"</strong> or <strong>"Share..."</strong></p>
-                <p style="font-size: 14px; opacity: 0.8;">Tap anywhere outside the image to close</p>
+                <p class="modal-close-instruction">Tap anywhere outside the image to close</p>
             `;
             
             // Create image element
@@ -1445,11 +1548,15 @@ if (localStorage.getItem('gdpr-consent') === 'accepted') {
             // Reset UI using the centralized function
             updateSamplingUI();
             
-            // Clear color samples
+            // Clear color samples in both palettes
             for (let i = 0; i < 5; i++) {
                 const sample = document.getElementById(`sample-${i}`);
                 sample.style.backgroundColor = '';
                 sample.classList.remove('collected');
+
+                const reviewSample = document.getElementById(`review-sample-${i}`);
+                reviewSample.style.backgroundColor = '';
+                reviewSample.classList.remove('collected');
             }
             
             showStep('welcome-step');
@@ -1458,14 +1565,14 @@ if (localStorage.getItem('gdpr-consent') === 'accepted') {
         function toggleDebugMode() {
             debugMode = !debugMode;
             const panel = document.getElementById('debug-panel');
-            const button = document.getElementById('debug-toggle');
-            
+            const link = document.getElementById('debug-toggle');
+
             if (debugMode) {
                 panel.style.display = 'block';
-                button.textContent = '🔍 HIDE DEBUG';
+                link.textContent = 'HIDE DEBUG';
             } else {
                 panel.style.display = 'none';
-                button.textContent = '🔍 DEBUG MODE';
+                link.textContent = 'DEBUG MODE';
             }
         }
         
