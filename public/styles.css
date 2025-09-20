@@ -8,27 +8,45 @@
 
 body {
     font-family: 'Poppins', 'Arial', sans-serif;
-    background: linear-gradient(135deg, 
-        #e066e0 0%, 
-        #e8996b 20%, 
-        #f0c766 40%, 
-        #f0f066 60%, 
-        #9bf066 80%, 
+    background: linear-gradient(135deg,
+        #e066e0 0%,
+        #e8996b 20%,
+        #f0c766 40%,
+        #f0f066 60%,
+        #9bf066 80%,
         #66c9f0 100%);
     min-height: 100vh;
+    min-height: 100dvh; /* Dynamic viewport height for mobile */
     display: flex;
     align-items: center;
     justify-content: center;
     color: white;
+    overflow-x: hidden;
+    margin: 0;
+    padding: 0;
 }
 
+/* Prevent mobile scrolling when content fits */
 @media (max-width: 768px) {
+    html {
+        height: 100%;
+        height: 100dvh;
+        overflow: hidden;
+    }
+
     body {
-        min-height: 100vh;
-        align-items: flex-start;
-        padding-top: 20px;
+        height: 100vh;
+        height: 100dvh;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        background-attachment: fixed;
+        padding-top: env(safe-area-inset-top);
+        padding-bottom: env(safe-area-inset-bottom);
+        padding-left: env(safe-area-inset-left);
+        padding-right: env(safe-area-inset-right);
     }
 }
+
 
 .container {
     text-align: center;
@@ -317,29 +335,6 @@ video.mirror-back {
     margin-bottom: 15px;
 }
 
-.debug-images {
-    display: flex;
-    gap: 20px;
-    justify-content: center;
-    flex-wrap: wrap;
-    margin-top: 20px;
-}
-
-.debug-item {
-    text-align: center;
-}
-
-.debug-item h4 {
-    margin-bottom: 10px;
-    font-size: 14px;
-    color: white;
-}
-
-.debug-item canvas {
-    border: 2px solid white;
-    border-radius: 8px;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-}
 
 /* Hidden canvas */
 #hidden-canvas {
@@ -490,9 +485,9 @@ button:disabled {
     min-width: 200px;
 }
 
-/* Adjust font size when displaying "and..." */
+/* Adjust font size when displaying "[swatching]" */
 .countdown.text-mode {
-    font-size: 4em;
+    font-size: 2em;
 }
 
 @keyframes countdownPulse {
@@ -551,37 +546,6 @@ button:disabled {
     }
 }
 
-.result-canvas {
-    border: 3px solid #4CAF50;
-}
-
-.progress-bar {
-    width: 100%;
-    height: 8px;
-    background: rgba(255,255,255,0.3);
-    border-radius: 4px;
-    margin: 20px 0;
-    overflow: hidden;
-}
-
-@media (max-width: 768px) {
-    .progress-bar {
-        margin: 15px 0;
-        height: 6px;
-    }
-}
-
-.progress-fill {
-    height: 100%;
-    background: linear-gradient(90deg, #c44db3, #d98a4d, #e6c34d, #e6e64d, #7de64d, #4db3d9);
-    border-radius: 4px;
-    transition: width 0.3s ease;
-}
-
-.debug-controls {
-    margin: 20px 0;
-}
-
 .main-buttons {
     display: flex;
     flex-wrap: wrap;
@@ -629,31 +593,6 @@ button:disabled {
     text-decoration: underline;
 }
 
-.debug-button {
-    background: rgba(255, 255, 255, 0.2) !important;
-    color: rgba(255, 255, 255, 0.8) !important;
-    border: 1px solid rgba(255, 255, 255, 0.3) !important;
-    padding: 8px 16px !important;
-    font-size: 14px !important;
-    border-radius: 20px !important;
-    margin: 5px !important;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.2) !important;
-    transition: all 0.3s ease !important;
-}
-
-.debug-button:hover:not(:disabled) {
-    background: rgba(255, 255, 255, 0.3) !important;
-    transform: translateY(-1px) !important;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.3) !important;
-}
-
-.debug-panel {
-    background: rgba(255,255,255,0.1);
-    padding: 20px;
-    border-radius: 15px;
-    margin: 20px 0;
-    backdrop-filter: blur(10px);
-}
 
 .debug-images {
     display: flex;

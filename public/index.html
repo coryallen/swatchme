@@ -26,33 +26,9 @@ if (localStorage.getItem('gdpr-consent') === 'accepted') {
 }
 </script>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>SWATCH ME</title>
-    <!-- <link rel="stylesheet" href="./styles.css"> -->
-     
-     <!-- Get base path of URL -->
-    <script>
-    
-    // Load CSS dynamically
-    function loadCSS(filename) {
-        const link = document.createElement('link');
-        link.rel = 'stylesheet';
-        link.href = './' + filename;
-        console.log('Loading CSS from:', link.href);
-        document.head.appendChild(link);
-    }
-    
-    // Load your CSS
-    loadCSS('styles.css');
-    
-    // Set logo source when DOM is ready
-    document.addEventListener('DOMContentLoaded', function() {
-        const logo = document.getElementById('logo');
-        if (logo) {
-            logo.src = './swatchme_logo_white.png';
-        }
-    });
-</script>
+    <link rel="stylesheet" href="./styles.css">
 
 
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
@@ -76,13 +52,13 @@ if (localStorage.getItem('gdpr-consent') === 'accepted') {
     </div>
 
     <div class="container">
-        <img src="" alt="SWATCH ME" class="logo" id="logo">
+        <img src="./swatchme_logo_white.png" alt="SWATCH ME" class="logo" id="logo">
         
         <!-- Step 1: Welcome -->
         <div class="step active" id="welcome-step">
             <div class="instructions">
                 <h2>Welcome to SWATCH ME!</h2>
-                <p>Create a unique portrait using colors from yourself! We'll help you sample 5 colors from your appearance, then generate a stunning photo with a custom background made from your personal palette.</p>
+                <p>Create a unique portrait using colors from yourself! This app will help you sample 5 colors from your appearance, then generate a stunning photo with a custom background made from your personal palette.</p>
                 <p>Make sure you have good lighting and camera access.</p>
                 <p class="attribution">Created by <a href="http://heymilkman.com">Cory Allen</a> and <a href="https://www.instagram.com/dannavision/">Danna Feintuch</a><br>
                     🤖 Generated with <a href="https://claude.ai/code">https://claude.ai/code</a><br>
@@ -100,7 +76,6 @@ if (localStorage.getItem('gdpr-consent') === 'accepted') {
                 <h2>Color Sampling (Step <span id="current-sample">1</span>/5)</h2>
                 <p>Tap anywhere on the video to sample colors from yourself. Collect 5 different colors - try skin tones, hair, clothing, or accessories for the best results.</p>
             </div>
-            
             
             <div class="camera-selection" id="camera-selection">
                 <label for="camera-select">Camera:</label>
@@ -286,6 +261,7 @@ if (localStorage.getItem('gdpr-consent') === 'accepted') {
         let availableCameras = [];
         let selectedCameraId = null;
         let currentCameraFacing = 'user'; // Track if current camera is front ('user') or back ('environment')
+        let videoClickHandler = null; // Store the click handler reference
         
         // Initialize MediaPipe Selfie Segmentation
         async function initializeSegmentation() {
@@ -631,8 +607,14 @@ if (localStorage.getItem('gdpr-consent') === 'accepted') {
             let isCapturing = false;
             let lastClickTime = 0;
             const debounceDelay = 500; // 500ms debounce
-            
-            video.addEventListener('click', (e) => {
+
+            // Remove any existing event listeners to prevent duplicates
+            if (videoClickHandler) {
+                video.removeEventListener('click', videoClickHandler);
+            }
+
+            // Create new handler function
+            videoClickHandler = function(e) {
                 const currentTime = Date.now();
                 
                 // Debounce: ignore clicks that are too close together
@@ -676,7 +658,10 @@ if (localStorage.getItem('gdpr-consent') === 'accepted') {
                         isCapturing = false;
                     }, 100);
                 });
-            });
+            };
+
+            // Add the event listener
+            video.addEventListener('click', videoClickHandler);
         }
 
         function captureColorAtPosition(video, x, y, callback) {
@@ -719,9 +704,7 @@ if (localStorage.getItem('gdpr-consent') === 'accepted') {
 
             // Auto-advance to review step if all 5 colors are collected
             if (currentSampleIndex >= 5) {
-                setTimeout(() => {
-                    goToReview();
-                }, 1000); // Small delay to show the final color being added
+                goToReview();
             }
 
             // Call callback to reset capturing flag
@@ -849,25 +832,27 @@ if (localStorage.getItem('gdpr-consent') === 'accepted') {
 
         function startCountdown() {
             showStep('countdown-step');
-            
+
             let count = 3;
             const display = document.getElementById('countdown-display');
-            
+
+            // Set initial display
+            display.textContent = count;
+            display.classList.remove('text-mode');
+            count--;
+
             const countInterval = setInterval(() => {
                 if (count > 0) {
                     display.textContent = count;
                     display.classList.remove('text-mode');
-                } else {
-                    display.textContent = 'and...';
+                } else if (count === 0) {
+                    display.textContent = '[swatching]';
                     display.classList.add('text-mode');
-                }
-                
-                if (count < 0) {
                     clearInterval(countInterval);
                     capturePhoto();
-                } else {
-                    count--;
+                    return;
                 }
+                count--;
             }, 1000);
         }
 
