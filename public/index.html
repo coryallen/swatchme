@@ -957,6 +957,9 @@ if (localStorage.getItem('gdpr-consent') === 'accepted') {
                 
                 // Show final result
                 showStep('result-step');
+
+                // Increase logo size on desktop for final result
+                document.querySelector('.container').classList.add('show-result');
             };
             img.src = capturedImage;
         }
@@ -1582,7 +1585,9 @@ if (localStorage.getItem('gdpr-consent') === 'accepted') {
 
         function restartExperience() {
             // Remove the experience-started class to restore original title size
-            document.querySelector('.container').classList.remove('experience-started');
+            const container = document.querySelector('.container');
+            container.classList.remove('experience-started');
+            container.classList.remove('show-result');
             
             // Reset all variables
             colorSamples = [];
