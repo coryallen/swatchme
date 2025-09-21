@@ -64,7 +64,7 @@ if (localStorage.getItem('gdpr-consent') === 'accepted') {
                     🤖 Generated with <a href="https://claude.ai/code">https://claude.ai/code</a><br>
                       This application uses MediaPipe (<a href="https://mediapipe.dev">https://mediapipe.dev</a>) - Copyright 2019 The MediaPipe Authors,<br>
                       Licensed under the Apache License, Version 2.0<br>
-                      <a href="#" id="privacy-policy-btn" class="privacy-link">Privacy Policy</a>
+                      <a href="#" id="privacy-policy-btn" class="privacy-link">Privacy Policy</a> • <a href="#" id="compatibility-btn" class="privacy-link">Device Compatibility</a>
                 </p>
             </div>
             <button onclick="startExperience()">START EXPERIENCE</button>
@@ -184,6 +184,67 @@ if (localStorage.getItem('gdpr-consent') === 'accepted') {
     </div>
 
     <canvas id="hidden-canvas"></canvas>
+
+    <!-- Compatibility Drawer -->
+    <div id="compatibility-drawer" class="privacy-drawer">
+        <div class="privacy-drawer-content">
+            <div class="privacy-header">
+                <h2>Device Compatibility</h2>
+                <button id="compatibility-close-btn" class="privacy-close-btn">×</button>
+            </div>
+            <div class="privacy-body">
+                <div class="privacy-section">
+                    <h3>Supported Browsers</h3>
+                    <ul>
+                        <li><strong>Chrome:</strong> Version 88+ (recommended)</li>
+                        <li><strong>Safari:</strong> Version 15+ (iOS 15+)</li>
+                        <li><strong>Firefox:</strong> Version 90+ (limited MediaPipe support)</li>
+                        <li><strong>Edge:</strong> Version 88+ (Chromium-based)</li>
+                    </ul>
+                </div>
+
+                <div class="privacy-section">
+                    <h3>Mobile Devices</h3>
+                    <ul>
+                        <li><strong>iOS:</strong> iPhone 12 and newer for best performance</li>
+                        <li><strong>Android:</strong> Android 10+ with modern browser</li>
+                        <li><strong>Camera Access:</strong> HTTPS required for mobile camera access</li>
+                        <li><strong>Performance:</strong> A12 Bionic chip or equivalent recommended</li>
+                    </ul>
+                </div>
+
+                <div class="privacy-section">
+                    <h3>Required Features</h3>
+                    <ul>
+                        <li><strong>WebRTC:</strong> Camera access via getUserMedia API</li>
+                        <li><strong>Canvas:</strong> 2D context for image processing</li>
+                        <li><strong>WebAssembly:</strong> Required for MediaPipe ML processing</li>
+                        <li><strong>Modern CSS:</strong> Flexbox, CSS Grid, and backdrop-filter</li>
+                    </ul>
+                </div>
+
+                <div class="privacy-section">
+                    <h3>Limitations</h3>
+                    <ul>
+                        <li><strong>Firefox Mobile:</strong> backdrop-filter not supported</li>
+                        <li><strong>Older Safari:</strong> aspect-ratio CSS not supported (pre-15)</li>
+                        <li><strong>Low-end devices:</strong> May experience performance issues with ML processing</li>
+                        <li><strong>Privacy mode:</strong> Some browsers may block camera access</li>
+                    </ul>
+                </div>
+
+                <div class="privacy-section">
+                    <h3>Troubleshooting</h3>
+                    <ul>
+                        <li>Ensure camera permissions are granted in browser settings</li>
+                        <li>Try refreshing the page if camera doesn't load</li>
+                        <li>For best performance, close other apps using the camera</li>
+                        <li>If MediaPipe fails, the app will fallback to basic color detection</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
     
     <!-- Privacy Policy Drawer -->
     <div id="privacy-drawer" class="privacy-drawer">
@@ -1698,6 +1759,44 @@ if (localStorage.getItem('gdpr-consent') === 'accepted') {
         
         // Initialize privacy drawer when page loads
         document.addEventListener('DOMContentLoaded', initPrivacyDrawer);
+
+        // Compatibility Drawer Functions
+        function initCompatibilityDrawer() {
+            const compatibilityBtn = document.getElementById('compatibility-btn');
+            const compatibilityDrawer = document.getElementById('compatibility-drawer');
+            const compatibilityCloseBtn = document.getElementById('compatibility-close-btn');
+
+            // Open drawer
+            compatibilityBtn.addEventListener('click', function() {
+                compatibilityDrawer.classList.add('open');
+                document.body.style.overflow = 'hidden'; // Prevent background scroll
+            });
+
+            // Close drawer
+            compatibilityCloseBtn.addEventListener('click', function() {
+                compatibilityDrawer.classList.remove('open');
+                document.body.style.overflow = ''; // Restore scroll
+            });
+
+            // Close drawer when clicking outside content
+            compatibilityDrawer.addEventListener('click', function(e) {
+                if (e.target === compatibilityDrawer) {
+                    compatibilityDrawer.classList.remove('open');
+                    document.body.style.overflow = ''; // Restore scroll
+                }
+            });
+
+            // Close drawer with escape key
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && compatibilityDrawer.classList.contains('open')) {
+                    compatibilityDrawer.classList.remove('open');
+                    document.body.style.overflow = ''; // Restore scroll
+                }
+            });
+        }
+
+        // Initialize compatibility drawer when page loads
+        document.addEventListener('DOMContentLoaded', initCompatibilityDrawer);
     </script>
 </body>
 </html>
