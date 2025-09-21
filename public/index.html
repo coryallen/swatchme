@@ -427,43 +427,52 @@ if (localStorage.getItem('gdpr-consent') === 'accepted') {
                 // First request camera permission to get device labels
                 const tempStream = await navigator.mediaDevices.getUserMedia({ video: true });
                 tempStream.getTracks().forEach(track => track.stop()); // Stop temporary stream
-                
+
                 const devices = await navigator.mediaDevices.enumerateDevices();
                 availableCameras = devices.filter(device => device.kind === 'videoinput');
-                
+
                 console.log('=== CAMERA ENUMERATION ===');
                 console.log('Raw devices found:', devices.length);
                 console.log('Video input devices found:', availableCameras.length);
                 availableCameras.forEach((camera, index) => {
                     console.log(`Camera ${index + 1}:`, camera.label || 'Unknown', camera.deviceId, 'facingMode:', camera.facingMode || 'undefined');
                 });
-                
-                // For mobile devices, try to create facing mode cameras instead of using raw device IDs
-                console.log('Testing if device supports facing mode cameras...');
-                try {
-                    const backStream = await navigator.mediaDevices.getUserMedia({ 
-                        video: { facingMode: 'environment' } 
-                    });
-                    backStream.getTracks().forEach(track => track.stop());
-                    console.log('✅ Back camera (environment) works');
-                    
-                    const frontStream = await navigator.mediaDevices.getUserMedia({ 
-                        video: { facingMode: 'user' } 
-                    });
-                    frontStream.getTracks().forEach(track => track.stop());
-                    console.log('✅ Front camera (user) works');
-                    
-                    // If both work, replace device cameras with facing mode cameras
-                    availableCameras = [
-                        { deviceId: 'front', label: 'Front Camera (Selfie)', facingMode: 'user' },
-                        { deviceId: 'back', label: 'Back Camera', facingMode: 'environment' }
-                    ];
-                    console.log('✅ Replaced with facing mode cameras for mobile:', availableCameras);
-                } catch (facingError) {
-                    console.log('⚠️ Device may only have one camera or facing modes not supported:', facingError.message);
-                    console.log('⚠️ Using original camera devices without facingMode info');
+
+                // Try to detect which cameras support facingMode and add that info
+                for (let camera of availableCameras) {
+                    // Attempt to determine facing mode by testing specific constraints
+                    try {
+                        // Test if this camera works with user facingMode
+                        const userStream = await navigator.mediaDevices.getUserMedia({
+                            video: {
+                                deviceId: { exact: camera.deviceId },
+                                facingMode: 'user'
+                            }
+                        });
+                        userStream.getTracks().forEach(track => track.stop());
+                        camera.facingMode = 'user';
+                        console.log(`✅ Camera ${camera.label} supports facingMode: user`);
+                    } catch (userError) {
+                        try {
+                            // Test if this camera works with environment facingMode
+                            const envStream = await navigator.mediaDevices.getUserMedia({
+                                video: {
+                                    deviceId: { exact: camera.deviceId },
+                                    facingMode: 'environment'
+                                }
+                            });
+                            envStream.getTracks().forEach(track => track.stop());
+                            camera.facingMode = 'environment';
+                            console.log(`✅ Camera ${camera.label} supports facingMode: environment`);
+                        } catch (envError) {
+                            // Camera doesn't support facingMode or is external
+                            camera.facingMode = 'unknown';
+                            console.log(`⚠️ Camera ${camera.label} facingMode: unknown (likely external/virtual camera)`);
+                        }
+                    }
                 }
-                
+
+                console.log('Final camera list with facingMode info:', availableCameras);
                 return availableCameras;
             } catch (error) {
                 console.error('Error enumerating cameras:', error);
@@ -474,36 +483,58 @@ if (localStorage.getItem('gdpr-consent') === 'accepted') {
         function populateCameraSelect() {
             const select = document.getElementById('camera-select');
             const selectionDiv = document.getElementById('camera-selection');
-            
+
             console.log('populateCameraSelect called, cameras available:', availableCameras.length);
-            
+
             select.innerHTML = '';
-            
-            // Show dropdown if we have any cameras (changed from > 1 to > 0 for debugging)
+
+            // Show dropdown if we have multiple cameras or we want to display camera info
             if (availableCameras.length > 0) {
                 console.log('Showing camera dropdown with', availableCameras.length, 'cameras');
-                
+
                 availableCameras.forEach((camera, index) => {
                     console.log(`Adding camera ${index}:`, camera);
                     const option = document.createElement('option');
                     option.value = camera.deviceId;
-                    option.textContent = camera.label || `Camera ${index + 1}`;
+
+                    // Create more descriptive labels
+                    let label = camera.label || `Camera ${index + 1}`;
+
+                    // Add facing mode info to label for clarity
+                    if (camera.facingMode === 'user') {
+                        label += ' (Front/Selfie)';
+                    } else if (camera.facingMode === 'environment') {
+                        label += ' (Back/Rear)';
+                    } else if (camera.facingMode === 'unknown') {
+                        // Don't add suffix for external/virtual cameras - keep original name
+                    }
+
+                    option.textContent = label;
                     select.appendChild(option);
-                    console.log(`Added option - deviceId: ${camera.deviceId}, label: ${option.textContent}, facingMode: ${camera.facingMode}`);
+                    console.log(`Added option - deviceId: ${camera.deviceId}, label: ${label}, facingMode: ${camera.facingMode}`);
                 });
-                
-                // Set up change handler
-                select.addEventListener('change', async (e) => {
+
+                // Remove any existing change handlers to prevent duplicates
+                const newSelect = select.cloneNode(true);
+                select.parentNode.replaceChild(newSelect, select);
+
+                // Set up change handler on the new element
+                newSelect.addEventListener('change', async (e) => {
                     selectedCameraId = e.target.value;
                     console.log('🔄 DROPDOWN CHANGE: Camera selection changed to:', selectedCameraId);
                     console.log('🔄 Selected option text:', e.target.selectedOptions[0].textContent);
                     await switchCamera(selectedCameraId);
                 });
-                
-                // Show the camera selection dropdown
-                selectionDiv.style.display = 'block';
-                console.log('Camera selection div displayed');
-                
+
+                // Show the camera selection dropdown (only if multiple cameras)
+                if (availableCameras.length > 1) {
+                    selectionDiv.style.display = 'block';
+                    console.log('Camera selection div displayed');
+                } else {
+                    selectionDiv.style.display = 'none';
+                    console.log('Only one camera, hiding dropdown');
+                }
+
                 // Select the first camera by default
                 selectedCameraId = availableCameras[0].deviceId;
             } else {
@@ -517,64 +548,66 @@ if (localStorage.getItem('gdpr-consent') === 'accepted') {
                 console.log('=== CAMERA SWITCH START ===');
                 console.log('Switching to deviceId:', deviceId);
                 console.log('Available cameras:', availableCameras);
-                
+
                 // Stop current stream
                 if (stream) {
                     stream.getTracks().forEach(track => track.stop());
                 }
-                
+
                 // Find the selected camera info
                 const selectedCamera = availableCameras.find(cam => cam.deviceId === deviceId);
                 console.log('Found selected camera:', selectedCamera);
-                
+
                 let videoConstraints;
-                if (selectedCamera && selectedCamera.facingMode) {
-                    // Use facingMode for mobile devices
-                    videoConstraints = {
-                        facingMode: selectedCamera.facingMode,
-                        width: 640,
-                        height: 480
-                    };
-                    currentCameraFacing = selectedCamera.facingMode;
-                    console.log('✅ Using facingMode constraint:', selectedCamera.facingMode);
-                    console.log('✅ Set currentCameraFacing to:', currentCameraFacing);
-                } else {
-                    // Use deviceId for regular cameras
-                    videoConstraints = {
-                        deviceId: deviceId ? { exact: deviceId } : undefined,
-                        width: 640,
-                        height: 480
-                    };
-                    // For regular cameras, assume front camera if no specific info
+
+                // Always use deviceId for precise camera selection
+                videoConstraints = {
+                    deviceId: deviceId ? { exact: deviceId } : undefined,
+                    width: 640,
+                    height: 480
+                };
+
+                // Set currentCameraFacing based on detected facingMode
+                if (selectedCamera && selectedCamera.facingMode === 'user') {
                     currentCameraFacing = 'user';
-                    console.log('⚠️ Using deviceId constraint (no facingMode info):', deviceId);
-                    console.log('⚠️ Set currentCameraFacing to default:', currentCameraFacing);
+                    console.log('✅ Camera is front-facing (user), enabling mirroring');
+                } else if (selectedCamera && selectedCamera.facingMode === 'environment') {
+                    currentCameraFacing = 'environment';
+                    console.log('✅ Camera is back-facing (environment), no mirroring');
+                } else {
+                    // For unknown/external cameras, determine mirroring preference
+                    // External cameras like OBS usually work better without mirroring
+                    currentCameraFacing = 'environment';
+                    console.log('⚠️ Camera facingMode unknown (likely external/virtual), defaulting to no mirroring');
                 }
-                
+
+                console.log('Using deviceId constraint:', deviceId);
+                console.log('Set currentCameraFacing to:', currentCameraFacing);
+
                 // Start new stream with selected camera
                 stream = await navigator.mediaDevices.getUserMedia({
                     video: videoConstraints
                 });
-                
+
                 // Update video elements
                 const video = document.getElementById('video');
                 const countdownVideo = document.getElementById('countdown-video');
-                
+
                 video.srcObject = stream;
                 countdownVideo.srcObject = stream;
-                
+
                 // Wait for video to load, then update mirroring
                 video.addEventListener('loadedmetadata', () => {
                     console.log('Video metadata loaded, updating mirroring');
                     updateVideoMirroring();
                 }, { once: true });
-                
+
                 // Also update immediately (fallback)
                 setTimeout(() => {
                     console.log('Fallback mirroring update');
                     updateVideoMirroring();
                 }, 100);
-                
+
                 console.log('Successfully switched to camera:', deviceId, 'facing:', currentCameraFacing);
             } catch (error) {
                 console.error('Error switching camera:', error);
@@ -618,16 +651,25 @@ if (localStorage.getItem('gdpr-consent') === 'accepted') {
                 
                 console.log('Enumerating available cameras...'); // Debug log
                 await enumerateCameras();
-                
+
+                // Populate camera dropdown after enumerating cameras
+                populateCameraSelect();
+
                 console.log('Requesting camera access...'); // Debug log
-                stream = await navigator.mediaDevices.getUserMedia({ 
-                    video: { 
-                        deviceId: selectedCameraId ? { exact: selectedCameraId } : undefined,
-                        width: 640, 
-                        height: 480 
-                    } 
+                // Use the first available camera or the selected one
+                const firstCamera = availableCameras[0];
+                if (!firstCamera) {
+                    throw new Error('No cameras found');
+                }
+
+                stream = await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        deviceId: { exact: firstCamera.deviceId },
+                        width: 640,
+                        height: 480
+                    }
                 });
-                
+
                 console.log('Camera access granted, setting up videos...'); // Debug log
                 const video = document.getElementById('video');
                 const countdownVideo = document.getElementById('countdown-video');
@@ -642,15 +684,14 @@ if (localStorage.getItem('gdpr-consent') === 'accepted') {
                     video.style.display = 'block';
                 }, { once: true });
 
-                // Populate camera dropdown after getting initial stream
-                populateCameraSelect();
-
                 // Set initial mirroring based on first camera
-                const firstCamera = availableCameras[0];
-                if (firstCamera && firstCamera.facingMode) {
-                    currentCameraFacing = firstCamera.facingMode;
+                if (firstCamera.facingMode === 'user') {
+                    currentCameraFacing = 'user';
+                } else if (firstCamera.facingMode === 'environment') {
+                    currentCameraFacing = 'environment';
                 } else {
-                    currentCameraFacing = 'user'; // Default to front camera mirroring
+                    // Default for unknown cameras (external/virtual) - no mirroring
+                    currentCameraFacing = 'environment';
                 }
                 updateVideoMirroring();
 
