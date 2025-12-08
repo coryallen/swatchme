@@ -96,10 +96,58 @@ Enable debug mode in the final result screen to view:
 
 ## Deployment
 
-The project includes GitHub Pages deployment workflow that:
+### GitHub Pages (Automatic)
+
+The project includes a GitHub Actions workflow that automatically deploys on push to main:
 - Copies public files to root directory
 - Excludes server files and dependencies
 - Deploys to `gh-pages` branch
+
+### AWS CloudFront (Manual)
+
+Deploy to AWS S3 + CloudFront for production hosting:
+
+```bash
+# Deploy to AWS
+./deploy.sh
+```
+
+The deployment script will:
+1. Check AWS CLI authentication
+2. Auto-detect the correct CloudFront distribution
+3. Sync files to S3 bucket: `s3://swatchme/site/`
+4. Invalidate CloudFront cache
+5. Display the live URL
+
+**Prerequisites:**
+- AWS CLI installed and configured
+- Valid AWS credentials with S3 and CloudFront permissions
+- Access to the `swatchme` S3 bucket
+
+### Validate CloudFront Configuration
+
+If CloudFront configuration changes or you need to verify the setup:
+
+```bash
+./validate-cloudfront.sh
+```
+
+This script will:
+- List all CloudFront distributions
+- Identify the correct distribution for SwatchMe
+- Show detailed configuration (origin, aliases, status)
+- Verify S3 bucket exists and contains content
+- Display distribution ID and URLs
+
+**Auto-Detection Logic:**
+The deployment script automatically finds the CloudFront distribution by matching:
+- **Origin**: `swatchme.s3.us-east-1.amazonaws.com`
+- **Alias**: `swatchme.coryallen.ninja`
+
+If your CloudFront configuration changes:
+1. Run `./validate-cloudfront.sh` to identify the new distribution
+2. Update `EXPECTED_ORIGIN` and `EXPECTED_ALIAS` in both scripts
+3. The deploy script will automatically use the updated values
 
 ## License
 
