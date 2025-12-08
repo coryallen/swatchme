@@ -9,12 +9,12 @@
 body {
     font-family: 'Poppins', 'Arial', sans-serif;
     background: linear-gradient(135deg,
-        #e066e0 0%,
-        #e8996b 20%,
-        #f0c766 40%,
-        #f0f066 60%,
-        #9bf066 80%,
-        #66c9f0 100%);
+        #ff73ff 0%,
+        #ffa774 20%,
+        #ffd26a 40%,
+        #ffff68 60%,
+        #a0ff65 80%,
+        #69d4ff 100%);
     min-height: 100vh;
     min-height: 100dvh; /* Dynamic viewport height for mobile */
     display: flex;
@@ -310,11 +310,23 @@ video.mirror-back {
     display: none;
 }
 
-/* Attribution text */
-.attribution {
+/* Attribution text - creators */
+.attribution-creators {
     font-size: 11px;
-    opacity: 0.8;
+    opacity: 0.85;
     margin-top: 15px;
+    margin-bottom: 8px;
+}
+
+/* Attribution text - details (smaller) */
+.attribution-details {
+    font-size: 11px;
+    opacity: 0.65;
+    margin-top: 0;
+    line-height: 1.4;
+    transform: scale(0.65);
+    transform-origin: center top;
+    margin-bottom: -10px;
 }
 
 /* Camera selection */
@@ -372,7 +384,7 @@ video.mirror-back {
 }
 
 button {
-    background: linear-gradient(45deg, #a33d96, #b87540, #c9a73d, #c9c93d, #6bc93d, #3d96c9);
+    background: linear-gradient(45deg, #db50c8, #e08d4e, #e8be42, #e8e840, #79ed3f, #3aa8e7);
     color: white;
     border: none;
     padding: 15px 30px;
