@@ -61,12 +61,6 @@ if (localStorage.getItem('gdpr-consent') === 'accepted') {
                 <p>Create a unique portrait using colors from yourself! This app will help you sample 5 colors from your appearance, then generate a stunning photo with a custom background made from your personal palette.</p>
                 <p>Make sure you have good lighting and camera access.</p>
                 <p class="attribution-creators">Created by <a href="http://coryallen.ninja">Cory Allen</a> and <a href="https://www.instagram.com/dannavision/">Danna Feintuch</a></p>
-                <p class="attribution-details">
-                    🤖 Generated with <a href="https://claude.ai/code">https://claude.ai/code</a><br>
-                      This application uses MediaPipe (<a href="https://mediapipe.dev">https://mediapipe.dev</a>) - Copyright 2019 The MediaPipe Authors,<br>
-                      Licensed under the Apache License, Version 2.0<br>
-                      <a href="#" id="privacy-policy-btn" class="privacy-link">Privacy Policy</a> • <a href="#" id="compatibility-btn" class="privacy-link">Device Compatibility</a>
-                </p>
             </div>
             <button onclick="startExperience()">START EXPERIENCE</button>
         </div>
@@ -185,6 +179,15 @@ if (localStorage.getItem('gdpr-consent') === 'accepted') {
     </div>
 
     <canvas id="hidden-canvas"></canvas>
+
+    <!-- Footer -->
+    <footer class="site-footer">
+        <p class="footer-attribution">
+            🤖 Generated with <a href="https://claude.ai/code">https://claude.ai/code</a> •
+            This application uses MediaPipe (<a href="https://mediapipe.dev">https://mediapipe.dev</a>) - Copyright 2019 The MediaPipe Authors, Licensed under the Apache License, Version 2.0 •
+            <a href="#" id="privacy-policy-btn" class="privacy-link">Privacy Policy</a> • <a href="#" id="compatibility-btn" class="privacy-link">Device Compatibility</a>
+        </p>
+    </footer>
 
     <!-- Compatibility Drawer -->
     <div id="compatibility-drawer" class="privacy-drawer">
@@ -621,6 +624,12 @@ if (localStorage.getItem('gdpr-consent') === 'accepted') {
 
             // Add class to reduce title size immediately for smooth transition
             document.querySelector('.container').classList.add('experience-started');
+
+            // Hide footer
+            const footer = document.querySelector('.site-footer');
+            if (footer) {
+                footer.style.display = 'none';
+            }
 
             // Show loading state immediately
             showStep('sampling-step');
@@ -1630,7 +1639,13 @@ if (localStorage.getItem('gdpr-consent') === 'accepted') {
             const container = document.querySelector('.container');
             container.classList.remove('experience-started');
             container.classList.remove('show-result');
-            
+
+            // Show footer again
+            const footer = document.querySelector('.site-footer');
+            if (footer) {
+                footer.style.display = 'block';
+            }
+
             // Reset all variables
             colorSamples = [];
             currentSampleIndex = 0;

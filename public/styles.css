@@ -23,7 +23,7 @@ body {
     color: white;
     overflow-x: hidden;
     margin: 0;
-    padding: 0;
+    padding: 0 0 50px 0; /* Bottom padding for fixed footer */
 }
 
 /* Prevent mobile scrolling when content fits */
@@ -61,18 +61,18 @@ body {
 }
 
 .logo {
-    max-width: 400px;
+    max-width: 300px;
     width: 100%;
     height: auto;
-    margin-bottom: 20px;
+    margin-bottom: 15px;
     filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.5));
     transition: all 0.3s ease;
 }
 
 @media (max-width: 768px) {
     .logo {
-        max-width: 150px;
-        margin-bottom: 15px;
+        max-width: 140px;
+        margin-bottom: 12px;
     }
 }
 
@@ -314,19 +314,54 @@ video.mirror-back {
 .attribution-creators {
     font-size: 11px;
     opacity: 0.85;
-    margin-top: 15px;
-    margin-bottom: 8px;
+    margin-top: 12px;
+    margin-bottom: 0;
 }
 
-/* Attribution text - details (smaller) */
-.attribution-details {
-    font-size: 11px;
-    opacity: 0.65;
-    margin-top: 0;
-    line-height: 1.4;
-    transform: scale(0.65);
-    transform-origin: center top;
-    margin-bottom: -10px;
+/* Footer */
+.site-footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(10px);
+    padding: 10px 20px;
+    text-align: center;
+    z-index: 100;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.footer-attribution {
+    font-size: 10px;
+    opacity: 0.75;
+    color: rgba(255, 255, 255, 0.9);
+    margin: 0;
+    line-height: 1.5;
+}
+
+.footer-attribution a {
+    color: rgba(255, 255, 255, 0.9);
+    text-decoration: underline;
+    text-decoration-color: rgba(255, 255, 255, 0.5);
+    text-underline-offset: 2px;
+    transition: all 0.3s ease;
+}
+
+.footer-attribution a:hover {
+    color: white;
+    text-decoration-color: white;
+}
+
+@media (max-width: 768px) {
+    .site-footer {
+        padding: 8px 10px;
+    }
+
+    .footer-attribution {
+        font-size: 8px;
+        line-height: 1.4;
+    }
 }
 
 /* Camera selection */
@@ -395,7 +430,7 @@ button {
     cursor: pointer;
     box-shadow: 0 5px 15px rgba(0,0,0,0.3);
     transition: transform 0.3s ease, box-shadow 0.3s ease;
-    margin: 10px;
+    margin: 18px 10px 25px 10px;
     text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
     letter-spacing: 0.02em;
 }
@@ -404,7 +439,7 @@ button {
     button {
         padding: 12px 24px;
         font-size: 16px;
-        margin: 8px 5px;
+        margin: 15px 5px 20px 5px;
     }
 }
 
@@ -420,9 +455,9 @@ button:disabled {
 
 .instructions {
     background: rgba(0, 0, 0, 0.3);
-    padding: 25px;
+    padding: 20px;
     border-radius: 15px;
-    margin: 20px 0;
+    margin: 15px 0;
     backdrop-filter: blur(10px);
     border: 1px solid rgba(255, 255, 255, 0.2);
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
@@ -431,7 +466,7 @@ button:disabled {
 @media (max-width: 768px) {
     .instructions {
         padding: 15px;
-        margin: 10px 0;
+        margin: 12px 0;
     }
 }
 
@@ -454,17 +489,20 @@ button:disabled {
 
 .instructions p {
     color: rgba(255, 255, 255, 0.95);
-    font-size: 16px;
-    line-height: 1.6;
+    font-size: 15px;
+    line-height: 1.5;
     font-weight: 400;
     text-shadow: 1px 1px 2px rgba(0,0,0,0.7);
-    margin-bottom: 12px;
+    margin-bottom: 10px;
+    max-width: 650px;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 @media (max-width: 768px) {
     .instructions p {
         font-size: 14px;
-        line-height: 1.5;
+        line-height: 1.45;
         margin-bottom: 8px;
     }
 }
