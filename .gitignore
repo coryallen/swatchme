@@ -21,6 +21,10 @@ validate-cloudfront.sh
 # Credentials template
 .env.example
 
+# Private dev docs
+README.dev.md
+CLAUDE.md
+
 # Output/results directories
 OUTPUT/
 results/

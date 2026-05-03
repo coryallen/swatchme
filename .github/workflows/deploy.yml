@@ -9,20 +9,20 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    
+
     steps:
-    - uses: actions/checkout@v3
-    
+    - uses: actions/checkout@v4
+
     - name: Copy files to root
       run: |
         cp public/index.html ./
         cp public/styles.css ./
-    
+
     - name: Deploy to GitHub Pages
-      uses: peaceiris/actions-gh-pages@v3
+      uses: peaceiris/actions-gh-pages@v4
       if: github.ref == 'refs/heads/main'
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         publish_dir: ./
         publish_branch: gh-pages
-        exclude_assets: '.github,public,server.js,package.json,package-lock.json,node_modules,*.pem'
+        exclude_assets: '.github,public'
