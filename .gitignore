@@ -9,6 +9,22 @@ cert.pem
 # Node modules
 node_modules/
 
+# Dev server (local only)
+server.js
+package.json
+package-lock.json
+
+# Deployment scripts (local only)
+deploy.sh
+validate-cloudfront.sh
+
+# Credentials template
+.env.example
+
+# Output/results directories
+OUTPUT/
+results/
+
 # Logs
 *.log
 npm-debug.log*
