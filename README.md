@@ -1,4 +1,4 @@
-# Color Sample Portrait
+# SwatchMe
 
 A web application that captures color samples from your webcam and creates portraits with custom tiled backgrounds using AI-powered background segmentation.
 
