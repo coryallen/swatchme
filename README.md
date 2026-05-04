@@ -2,7 +2,7 @@
 
 A web application that captures color samples from your webcam and creates portraits with custom tiled backgrounds using AI-powered background segmentation.
 
-See it in action at [https://swatchme.coryallen.ninja]
+See it in action at https://swatchme.coryallen.ninja
 
 ## Features
 
