@@ -137,10 +137,12 @@ if (localStorage.getItem('gdpr-consent') === 'accepted') {
                 <h2>Get Ready!</h2>
                 <p>Strike your best pose! The photo will be taken automatically.</p>
             </div>
-            
-            <video id="countdown-video" width="640" height="480" autoplay playsinline muted></video>
-            
-            <div class="countdown" id="countdown-display">3</div>
+
+            <div class="countdown-container">
+                <video id="countdown-video" width="640" height="480" autoplay playsinline muted></video>
+                <img id="captured-preview" class="captured-preview" style="display:none;" alt="">
+                <div class="countdown" id="countdown-display">3</div>
+            </div>
         </div>
 
         <!-- Step 5: Final Result -->
@@ -149,6 +151,15 @@ if (localStorage.getItem('gdpr-consent') === 'accepted') {
                 <canvas id="result-canvas" class="result-canvas"></canvas>
             </div>
             
+            <div id="rmbg-upgrade" class="rmbg-upgrade" style="display:none;">
+                <div id="rmbg-progress-section" class="rmbg-progress-section">
+                    <span class="rmbg-loading-label">Enhancing segmentation…</span>
+                    <div class="rmbg-bar-track"><div class="rmbg-bar-fill" id="rmbg-bar-fill"></div></div>
+                    <span class="rmbg-pct" id="rmbg-pct">0%</span>
+                </div>
+                <button id="rmbg-improve-btn" onclick="improveBackground()" style="display:none;">✦ IMPROVE BACKGROUND</button>
+            </div>
+
             <div class="main-buttons">
                 <button onclick="downloadImage()">SHARE/DOWNLOAD</button>
                 <button onclick="restartExperience()">START OVER</button>
@@ -185,6 +196,7 @@ if (localStorage.getItem('gdpr-consent') === 'accepted') {
         <p class="footer-attribution">
             Source code: <a href="https://github.com/coryallen/swatchme">github.com/coryallen/swatchme</a> •
             This application uses MediaPipe (<a href="https://mediapipe.dev">https://mediapipe.dev</a>) - Copyright 2019 The MediaPipe Authors, Licensed under the Apache License, Version 2.0 •
+            Background segmentation powered by <a href="https://huggingface.co/Xenova/modnet">MODNet (Xenova/modnet)</a> via <a href="https://huggingface.co/docs/transformers.js">Transformers.js</a>, Apache 2.0 •
             <a href="#" id="privacy-policy-btn" class="privacy-link">Privacy Policy</a> • <a href="#" id="compatibility-btn" class="privacy-link">Device Compatibility</a>
         </p>
     </footer>
@@ -233,6 +245,7 @@ if (localStorage.getItem('gdpr-consent') === 'accepted') {
                         <li><strong>Firefox Mobile:</strong> backdrop-filter not supported</li>
                         <li><strong>Older Safari:</strong> aspect-ratio CSS not supported (pre-15)</li>
                         <li><strong>Low-end devices:</strong> May experience performance issues with ML processing</li>
+                        <li><strong>MODNet model:</strong> ~26 MB download on first use; browser caches it for subsequent sessions</li>
                         <li><strong>Privacy mode:</strong> Some browsers may block camera access</li>
                     </ul>
                 </div>
@@ -293,6 +306,7 @@ if (localStorage.getItem('gdpr-consent') === 'accepted') {
                     <ul>
                         <li><strong>Google Analytics:</strong> For website analytics (only with your consent)</li>
                         <li><strong>MediaPipe:</strong> For AI-powered background segmentation (processing occurs locally)</li>
+                        <li><strong>Transformers.js / MODNet:</strong> For enhanced AI background segmentation (processing occurs locally; ~26 MB model is cached by browser after first download)</li>
                     </ul>
                 </div>
                 
@@ -327,7 +341,12 @@ if (localStorage.getItem('gdpr-consent') === 'accepted') {
         let selectedCameraId = null;
         let currentCameraFacing = 'user'; // Track if current camera is front ('user') or back ('environment')
         let videoClickHandler = null; // Store the click handler reference
-        
+        let rmbgModel = null;
+        let rmbgProcessor = null;
+        let rmbgLoadState = 'idle'; // 'idle' | 'loading' | 'ready' | 'failed'
+        let rmbgLoadProgress = 0;   // 0–100
+        let usedFallbackSegmentation = false;
+
         // Initialize MediaPipe Selfie Segmentation
         async function initializeSegmentation() {
             try {
@@ -361,7 +380,133 @@ if (localStorage.getItem('gdpr-consent') === 'accepted') {
         
         // Initialize segmentation when page loads
         window.addEventListener('load', initializeSegmentation);
-        
+
+        async function startRmbgLoading() {
+            if (rmbgLoadState !== 'idle') return;
+            rmbgLoadState = 'loading';
+            rmbgLoadProgress = 0;
+            try {
+                const { AutoProcessor, AutoModel, RawImage } = await import(
+                    'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3/dist/transformers.js'
+                );
+                window._rmbgHelpers = { RawImage };
+                [rmbgProcessor, rmbgModel] = await Promise.all([
+                    AutoProcessor.from_pretrained('Xenova/modnet'),
+                    AutoModel.from_pretrained('Xenova/modnet', {
+                        dtype: 'fp32',
+                        progress_callback: (data) => {
+                            if (data.status === 'progress' && typeof data.progress === 'number') {
+                                rmbgLoadProgress = Math.min(99, Math.round(data.progress));
+                                updateRmbgProgressUI();
+                            }
+                        },
+                    }),
+                ]);
+                rmbgLoadProgress = 100;
+                rmbgLoadState = 'ready';
+                updateRmbgProgressUI();
+            } catch (err) {
+                console.error('MODNet load failed:', err);
+                rmbgLoadState = 'failed';
+                updateRmbgProgressUI();
+            }
+        }
+
+        async function applyRmbgSegmentation(ctx, img) {
+            const { RawImage } = window._rmbgHelpers;
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = img.width;
+            tempCanvas.height = img.height;
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCtx.drawImage(img, 0, 0);
+
+            const rawImage = await RawImage.fromURL(tempCanvas.toDataURL());
+            const { pixel_values } = await rmbgProcessor(rawImage);
+            const outputs = await rmbgModel({ input: pixel_values });
+
+            const maskTensor = outputs.output ?? outputs.pred_masks ?? Object.values(outputs)[0];
+            const maskArray = maskTensor.data;
+            const maskH = maskTensor.dims[maskTensor.dims.length - 2];
+            const maskW = maskTensor.dims[maskTensor.dims.length - 1];
+
+            const maskCanvas = document.createElement('canvas');
+            maskCanvas.width = maskW;
+            maskCanvas.height = maskH;
+            const maskCtx = maskCanvas.getContext('2d');
+            const maskImgData = maskCtx.createImageData(maskW, maskH);
+            for (let i = 0; i < maskArray.length; i++) {
+                const v = Math.round(maskArray[i] * 255);
+                maskImgData.data[i * 4] = maskImgData.data[i * 4 + 1] = maskImgData.data[i * 4 + 2] = v;
+                maskImgData.data[i * 4 + 3] = 255;
+            }
+            maskCtx.putImageData(maskImgData, 0, 0);
+
+            const scaledMaskCanvas = document.createElement('canvas');
+            scaledMaskCanvas.width = img.width;
+            scaledMaskCanvas.height = img.height;
+            const scaledMaskCtx = scaledMaskCanvas.getContext('2d');
+            scaledMaskCtx.imageSmoothingEnabled = true;
+            scaledMaskCtx.imageSmoothingQuality = 'high';
+            scaledMaskCtx.drawImage(maskCanvas, 0, 0, img.width, img.height);
+            const scaledMask = scaledMaskCtx.getImageData(0, 0, img.width, img.height);
+
+            segmentationMask = scaledMaskCanvas;
+
+            createTiledBackground(ctx, img.width, img.height);
+
+            const personData = tempCtx.getImageData(0, 0, img.width, img.height);
+            const bgData = ctx.getImageData(0, 0, img.width, img.height);
+            for (let i = 0; i < personData.data.length; i += 4) {
+                const a = scaledMask.data[i] / 255;
+                const ia = 1 - a;
+                bgData.data[i]     = Math.round(personData.data[i]     * a + bgData.data[i]     * ia);
+                bgData.data[i + 1] = Math.round(personData.data[i + 1] * a + bgData.data[i + 1] * ia);
+                bgData.data[i + 2] = Math.round(personData.data[i + 2] * a + bgData.data[i + 2] * ia);
+            }
+            ctx.putImageData(bgData, 0, 0);
+        }
+
+        function updateRmbgProgressUI() {
+            const upgradeDiv = document.getElementById('rmbg-upgrade');
+            if (!upgradeDiv) return;
+
+            const progressSection = document.getElementById('rmbg-progress-section');
+            const improveBtn = document.getElementById('rmbg-improve-btn');
+            const barFill = document.getElementById('rmbg-bar-fill');
+            const pct = document.getElementById('rmbg-pct');
+
+            if (rmbgLoadState === 'loading' && usedFallbackSegmentation) {
+                upgradeDiv.style.display = 'flex';
+                if (progressSection) progressSection.style.display = 'flex';
+                if (improveBtn) improveBtn.style.display = 'none';
+                if (barFill) barFill.style.width = rmbgLoadProgress + '%';
+                if (pct) pct.textContent = rmbgLoadProgress + '%';
+            } else if (rmbgLoadState === 'ready' && usedFallbackSegmentation) {
+                upgradeDiv.style.display = 'flex';
+                if (progressSection) progressSection.style.display = 'none';
+                if (improveBtn) improveBtn.style.display = 'block';
+            } else {
+                upgradeDiv.style.display = 'none';
+            }
+        }
+
+        async function improveBackground() {
+            const canvas = document.getElementById('result-canvas');
+            const ctx = canvas.getContext('2d');
+            const upgradeDiv = document.getElementById('rmbg-upgrade');
+
+            const img = new Image();
+            img.onload = async function() {
+                canvas.width = img.width;
+                canvas.height = img.height;
+                await applyRmbgSegmentation(ctx, img);
+                await addLogoToCanvas(ctx, canvas.width, canvas.height);
+                usedFallbackSegmentation = false;
+                if (upgradeDiv) upgradeDiv.style.display = 'none';
+            };
+            img.src = capturedImage;
+        }
+
         // Function to update debug display
         function updateDebugDisplay() {
             const statusElement = document.getElementById('camera-status');
@@ -621,6 +766,7 @@ if (localStorage.getItem('gdpr-consent') === 'accepted') {
         
         async function startExperience() {
             console.log('startExperience called'); // Debug log
+            startRmbgLoading();
 
             // Add class to reduce title size immediately for smooth transition
             document.querySelector('.container').classList.add('experience-started');
@@ -945,6 +1091,11 @@ if (localStorage.getItem('gdpr-consent') === 'accepted') {
         function startCountdown() {
             showStep('countdown-step');
 
+            const preview = document.getElementById('captured-preview');
+            const countdownVideo = document.getElementById('countdown-video');
+            if (preview) { preview.style.display = 'none'; preview.src = ''; }
+            if (countdownVideo) countdownVideo.style.display = 'block';
+
             let count = 3;
             const display = document.getElementById('countdown-display');
 
@@ -981,9 +1132,15 @@ if (localStorage.getItem('gdpr-consent') === 'accepted') {
             
             // Store the captured image
             capturedImage = canvas.toDataURL('image/png');
-            
-            // Keep the video stream active for potential restart
-            
+
+            // Show captured frame, hide live video
+            const preview = document.getElementById('captured-preview');
+            if (preview) {
+                preview.src = capturedImage;
+                preview.style.display = 'block';
+            }
+            video.style.display = 'none';
+
             // Process the image and show result
             processImageWithBackground();
         }
@@ -991,26 +1148,40 @@ if (localStorage.getItem('gdpr-consent') === 'accepted') {
         async function processImageWithBackground() {
             const canvas = document.getElementById('result-canvas');
             const ctx = canvas.getContext('2d');
-            
+
             const img = new Image();
             img.onload = async function() {
-                canvas.width = img.width;
-                canvas.height = img.height;
-                
-                // Apply MediaPipe segmentation (with fallback to basic method)
-                await applyMediaPipeSegmentation(ctx, img);
-                
-                // Add logo in bottom right corner
-                await addLogoToCanvas(ctx, canvas.width, canvas.height);
-                
-                // Update debug panels with available data
-                updateDebugPanels(img, { segmentationMask: segmentationMask });
-                
-                // Show final result
-                showStep('result-step');
+                try {
+                    canvas.width = img.width;
+                    canvas.height = img.height;
 
-                // Increase logo size on desktop for final result
-                document.querySelector('.container').classList.add('show-result');
+                    if (rmbgLoadState === 'ready') {
+                        usedFallbackSegmentation = false;
+                        await applyRmbgSegmentation(ctx, img);
+                    } else {
+                        usedFallbackSegmentation = true;
+                        await applyMediaPipeSegmentation(ctx, img);
+                    }
+
+                    // Add logo in bottom right corner
+                    await addLogoToCanvas(ctx, canvas.width, canvas.height);
+
+                    // Update debug panels with available data
+                    updateDebugPanels(img, { segmentationMask: segmentationMask });
+
+                    // Show final result
+                    showStep('result-step');
+
+                    // Increase logo size on desktop for final result
+                    document.querySelector('.container').classList.add('show-result');
+
+                    // Update upgrade UI based on which segmentation was used
+                    updateRmbgProgressUI();
+                } catch (err) {
+                    console.error('Image processing failed:', err);
+                    alert('Something went wrong processing your photo. Please try again.');
+                    showStep('review-step');
+                }
             };
             img.src = capturedImage;
         }
@@ -1651,6 +1822,9 @@ if (localStorage.getItem('gdpr-consent') === 'accepted') {
             currentSampleIndex = 0;
             capturedImage = null;
             segmentationMask = null;
+            usedFallbackSegmentation = false;
+            const upgradeDiv = document.getElementById('rmbg-upgrade');
+            if (upgradeDiv) upgradeDiv.style.display = 'none';
             // Note: selfieSegmentation and isSegmentationReady remain initialized
             
             // Reset UI using the centralized function
